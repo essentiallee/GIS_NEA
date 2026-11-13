@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=https://docs.maplibre-yaml.org/schema/latest/map.schema.json
+# YAML holds settings. Indentation groups settings; use spaces, not tabs.
+type: map
+id: nyc-cultural-organizations
+
+config:
+  mapStyle: "style.json"
+  # Geographic coordinates: longitude FIRST, latitude SECOND.
+  center: [-73.98, 40.70]
+  zoom: 9.5
+
+controls:
+  navigation:
+    enabled: true
+    position: bottom-right
+
+  scale:
+    enabled: true
+    position: bottom-right
+
+legend:
+  position: bottom-left
+
+layers:
+  # The NTA polygons provide a local, keyless grayscale basemap.
+  - id: nta-areas
+    label: Neighborhood areas (NTAs)
+    type: fill
+    source:
+      type: geojson
+      url: "data/nyc-ntas.geojson"
+    paint:
+      fill-color: "#f0f0f0"
+      fill-outline-color: "#a0a0a0"
+    legend: { label: "2020 NTA area", color: "#f0f0f0" }
+
+  # Each point is a record from the supplied DCLA directory.
+  - id: cultural-organizations
+    label: DCLA-listed organization records
+    type: circle
+    source:
+      type: geojson
+      url: "data/dcla-organizations.geojson"
+    paint:
+      circle-color: "#262626"
+      circle-radius: 3.5
+      circle-stroke-color: "#ffffff"
+      circle-stroke-width: 0.7
+      circle-opacity: 0.85
+    legend: { label: "DCLA directory record", color: "#262626", shape: circle }
+    interactive:
+      hover:
+        cursor: pointer
+      click:
+        popup:
+          - h3:
+              - property: name
+          - p:
+              - str: "Discipline: "
+              - property: discipline
+                else: "Not recorded"
+          - p:
+              - str: "Directory snapshot: October 22, 2026. Operating status is not verified."

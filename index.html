@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- HTML describes the page. CSS controls its appearance. -->
+  <meta charset="utf-8">
+  <link rel="icon" href="data:,">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NEA / NYC Cultural Infrastructure</title>
+  <meta name="description" content="An educational map exploring NYC cultural organizations and neighborhood geography.">
+
+  <!-- These library versions follow the course's plain HTML template. -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="css/site.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "maplibre-gl": "https://unpkg.com/maplibre-gl@6/dist/maplibre-gl.mjs"
+      }
+    }
+  </script>
+  <!-- This script teaches the browser how to display the ml-map element. -->
+  <script type="module" src="https://unpkg.com/@maplibre-yaml/core@0.10/register.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-name" href="./">NEA / NYC</a>
+    <a href="README.md">Data &amp; setup</a>
+  </header>
+
+  <main class="layout">
+    <aside class="intro" aria-labelledby="project-title">
+      <p class="eyebrow">CULTURAL INFRASTRUCTURE / STARTER MAP</p>
+      <h1 id="project-title">Declining funds.<br>Uneven cultural landscapes.</h1>
+      <p>Where do reductions in NEA funding overlap with fewer nearby cultural organizations?</p>
+
+      <h2>Start with the locations</h2>
+      <p>This first map shows DCLA-listed organization records and 2020 Neighborhood Tabulation Areas (NTAs).</p>
+      <p class="stat">2,268 mapped records<br>267 without usable coordinates</p>
+
+      <h2>Explore</h2>
+      <ol>
+        <li>Drag to move around the city.</li>
+        <li>Scroll or use the zoom buttons.</li>
+        <li>Click a point to read its name and discipline.</li>
+        <li>Use the layer controls to compare points and neighborhoods.</li>
+      </ol>
+
+      <h2>Read the map carefully</h2>
+      <p>A directory address may be an office, mailing address, or public venue. These records do not confirm whether an organization was open in 2024 or 2025.</p>
+      <p>Funding changes, half-mile buffers, and zoning are the next layers to add.</p>
+
+      <p class="sources">Sources: <a href="https://data.cityofnewyork.us/d/u35m-9t32">NYC DCLA directory</a>, October 22, 2026 download; <a href="https://www.nyc.gov/content/planning/pages/resources/datasets/census-tracts">NYC DCP 2020 tract/NTA geography</a>, supplied release 26b.</p>
+    </aside>
+
+    <section class="map-panel" aria-label="Interactive map of NYC cultural organization records">
+      <!-- The YAML file controls the map's view, data, symbols, and popups. -->
+      <!-- A map must have a height; the map-panel CSS supplies it here. -->
+      <ml-map src="maps/nyc.yaml" class="project-map"></ml-map>
+      <noscript><p>Enable JavaScript to use the interactive map.</p></noscript>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "version": 8,
+  "name": "NYC grayscale canvas",
+  "sources": {},
+  "layers": [
+    {
+      "id": "white-background",
+      "type": "background",
+      "paint": { "background-color": "#ffffff" }
+    }
+  ]
+}
