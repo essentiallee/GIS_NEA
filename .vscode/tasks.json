@@ -1,0 +1,18 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Open GIS_Final in Figma",
+      "type": "process",
+      "command": "open",
+      "args": [
+        "https://www.figma.com/design/PaYGMeDTtFoZWBah2SaZfV/GIS_Final?node-id=0-1"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    }
+  ]
+}

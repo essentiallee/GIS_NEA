@@ -1,58 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- HTML describes the page. CSS controls its appearance. -->
   <meta charset="utf-8">
-  <link rel="icon" href="data:,">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>NEA / NYC Cultural Infrastructure</title>
-  <meta name="description" content="An educational map exploring NYC cultural organizations and neighborhood geography.">
-
-  <!-- These library versions follow the course's plain HTML template. -->
+  <link rel="icon" href="data:,">
+  <title>GIS Final / NYC Cultural Infrastructure</title>
+  <meta name="description" content="NYC cultural organization locations in the GIS_Final Figma layout.">
+  <!-- The course mapping structure stays in HTML + YAML. -->
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6/dist/maplibre-gl.css">
   <link rel="stylesheet" href="css/site.css">
   <script type="importmap">
-    {
-      "imports": {
-        "maplibre-gl": "https://unpkg.com/maplibre-gl@6/dist/maplibre-gl.mjs"
-      }
-    }
+    { "imports": { "maplibre-gl": "https://unpkg.com/maplibre-gl@6/dist/maplibre-gl.mjs" } }
   </script>
-  <!-- This script teaches the browser how to display the ml-map element. -->
   <script type="module" src="https://unpkg.com/@maplibre-yaml/core@0.10/register.js"></script>
 </head>
 <body>
-  <header class="site-header">
-    <a class="site-name" href="./">NEA / NYC</a>
-    <a href="README.md">Data &amp; setup</a>
-  </header>
+  <!-- Figma frame 1:2: two rounded panels and a source footer. -->
+  <main class="page" data-node-id="1:2">
+    <div class="workspace">
+      <section class="panel map-panel" data-node-id="1:3"
+               aria-label="Interactive NYC cultural organization map">
+        <ml-map src="maps/nyc.yaml" class="project-map"></ml-map>
+        <noscript><p class="fallback">Enable JavaScript to use the map.</p></noscript>
+      </section>
 
-  <main class="layout">
-    <aside class="intro" aria-labelledby="project-title">
-      <p class="eyebrow">NEA / NYC</p>
-      <h1 id="project-title">Cultural funding and nearby organizations</h1>
-      <p>Where do funding cuts overlap with fewer cultural organizations?</p>
+      <section class="panel information-panel" data-node-id="1:7"
+               aria-labelledby="project-title">
+        <header class="panel-heading">
+          <!-- Exact SVG exported from Figma, stored locally. -->
+          <img class="title-circle" data-node-id="1:8"
+               src="assets/figma-title-circle.svg" alt="">
+          <!-- Replace Figma's placeholder with the actual project title. -->
+          <h1 id="project-title" data-node-id="1:4">NYC Cultural Infrastructure</h1>
+        </header>
+      </section>
+    </div>
 
-      <h2>Shown now</h2>
-      <p>DCLA directory locations and neighborhood areas (NTAs).</p>
-      <p class="stat">2,268 mapped records<br>267 without coordinates</p>
-
-      <h2>Explore</h2>
-      <p>Drag or zoom. Click a point for details. Switch layers on or off.</p>
-
-      <h2>About the data</h2>
-      <p>Addresses may be offices or venues. Operating status is unverified.</p>
-      <p>Funding and zoning layers come next.</p>
-
-      <p class="sources">Sources: <a href="https://data.cityofnewyork.us/d/u35m-9t32">NYC DCLA</a>, October 2026; <a href="https://www.nyc.gov/content/planning/pages/resources/datasets/census-tracts">NYC DCP</a>, 2020 geography.</p>
-    </aside>
-
-    <section class="map-panel" aria-label="Interactive map of NYC cultural organization records">
-      <!-- The YAML file controls the map's view, data, symbols, and popups. -->
-      <!-- A map must have a height; the map-panel CSS supplies it here. -->
-      <ml-map src="maps/nyc.yaml" class="project-map"></ml-map>
-      <noscript><p>Enable JavaScript to use the interactive map.</p></noscript>
-    </section>
+    <footer class="sources" data-node-id="1:5">
+      <a href="https://data.cityofnewyork.us/d/u35m-9t32">NYC DCLA, Oct 2026</a>
+      <span aria-hidden="true"> / </span>
+      <a href="https://www.nyc.gov/content/planning/pages/resources/datasets/census-tracts">NYC DCP, 2020 NTA geography</a>
+      <span aria-hidden="true"> / </span>
+      <a href="data/README.md">Data notes</a>
+    </footer>
   </main>
 </body>
 </html>
