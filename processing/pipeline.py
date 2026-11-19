@@ -21,6 +21,15 @@ pyproj.network.set_network_enabled(False)
 ROOT = Path(__file__).resolve().parents[1]
 SQL = Path(__file__).parent / 'sql'
 FEET_PER_METER = 3937 / 1200  # EPSG:2263 uses US survey feet.
+VENUE_COLORS = {
+    'Theater':'#db567f', 'Music':'#6b967e', 'Dance':'#d7b845', 'Visual Arts':'#a998b6',
+    'Multi-Discipl, Perf & Non-Perf':'#d39165', 'Multi-Discipline, Performing':'#a77886',
+    'Multi-Discipline, Non-Perform':'#9d9858', 'Film/Video/Audio':'#728fa4',
+    'Museum':'#c58059', 'Literature':'#8e77a2', 'Other':'#96958a', 'Folk Arts':'#8ea764',
+    'Architecture/Design':'#789b99', 'Humanities':'#bd8a99', 'New Media':'#8e93b6',
+    'Science':'#638389', 'Photography':'#787c95', 'Botanical':'#5f8f68',
+    'Crafts':'#b3a569', 'Zoo':'#8f8f59', 'Not recorded':'#b9bcb4'
+}
 
 def check(condition, message):
     if not condition:
@@ -108,8 +117,13 @@ def export_web(connection, staging, palette, chapters_path):
         stats[f'mapped_positive{year}'] = connection.sql(
             f'SELECT count(*) FROM recipient_points WHERE cents{year}>0').fetchone()[0]
     nta_legend = [{'id':n['id'],'name':n['name'],'color':n['color']} for n in neighborhoods]
+    venue_types = [{'type':category,'count':count,'color':VENUE_COLORS.get(category,'#b9bcb4')}
+                   for category,count in connection.sql('''
+                       SELECT COALESCE(discipline,'Not recorded') AS category,count(*) AS records
+                       FROM directory GROUP BY category ORDER BY records DESC,category''').fetchall()]
     write_json(staging/'funding.json',dict(recipients=recipients,neighborhoods=neighborhoods,
-                                         anchors=anchors,stats=stats,palette=palette,ntaLegend=nta_legend))
+                                         anchors=anchors,stats=stats,palette=palette,
+                                         ntaLegend=nta_legend,venueTypes=venue_types))
 
     nta_geometries = geometry_lookup(connection, f'SELECT id,{wgs84("ST_SimplifyPreserveTopology(geom,35)")} FROM ntas')
     active_nta_ids = {n['id'] for n in neighborhoods}
@@ -118,7 +132,8 @@ def export_web(connection, staging, palette, chapters_path):
                                                 'has_funding_records':uid in active_nta_ids})
                     for uid,name,borough in connection.sql('SELECT id,name,borough FROM ntas ORDER BY id').fetchall()])
     directory = features([feature({'type':'Point','coordinates':[lon,lat]},
-                         {'record_id':uid,'name':name,'discipline':discipline})
+                         {'record_id':uid,'name':name,'discipline':discipline,
+                          'type_color':VENUE_COLORS.get(discipline or 'Not recorded','#b9bcb4')})
                          for uid,name,discipline,lon,lat in connection.sql(
                              'SELECT record_id,name,discipline,longitude,latitude FROM directory ORDER BY record_id').fetchall()])
     write_json(staging/'story-ntas.geojson',ntas)
@@ -155,28 +170,13 @@ def export_web(connection, staging, palette, chapters_path):
         links.append(feature(json.loads(geometry),{'from_id':a,'to_id':b,
             'name':anchors_by_id[a]['name']+' / '+anchors_by_id[b]['name'],
             'distance_feet':distance,'kind':'proposal'}))
-    # Reproduce the first Figma map's ornamental composition separately from
-    # analytical buffers. These are not catchments, counts, or risk measures.
-    intro_rings = [point({'coordinates':r['coordinates'],'kind':'decoration'})
-                   for r in recipients if r['coordinates'] and r['fy2024']>50000]
-    decoration_candidates = sorted(
-        [r for r in recipients if r['coordinates'] and r['change']<0
-         and max(r['fy2024'],r['fy2025'])>0],
-        key=lambda r:(-r['change'],r['coordinates'][0],-r['coordinates'][1],r['id']),
-        reverse=True)
-    step = max(1,len(decoration_candidates)//12)
-    intro_accents = [point({'coordinates':r['coordinates'],'kind':'decoration',
-                            'color':colors[i%len(colors)]})
-                     for i,r in enumerate(decoration_candidates[::step][:12])]
     map_sources = {
         'recipients':features([point(r) for r in recipients if r['coordinates']]),
         'funding-columns':features(funding_columns),'nta-columns':features(paired),
         'negative-ntas':features([point(n) for n in neighborhoods if min(n['fy2024'],n['fy2025'])<0]),
         'anchors':features([point(a) for a in anchors]),
         'buffers':features([feature(buffer_geometries[a['id']],{**a,'kind':'buffer'}) for a in anchors]),
-        'proposal':features(links),
-        'intro-ring-centers':features(intro_rings),
-        'intro-accents':features(intro_accents)
+        'proposal':features(links)
     }
     write_json(staging/'map-sources.json',map_sources)
     chapters = json.loads(chapters_path.read_text())

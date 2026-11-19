@@ -163,8 +163,9 @@ Those remain explicit research or scenario steps.
 - Census geocoder: https://geocoding.geo.census.gov/
 
 
-## Chapter 1 ornamental layers
 
-The Python export keeps `intro-ring-centers` and `intro-accents` separate from the analytical buffers. They reproduce the Figma composition: fixed-radius concentric rings (3, 5, 8, and 12 screen pixels), 22-pixel pastel outer rings, and 20-pixel translucent square accents. The first set uses FY2024 recipients above $50,000 as in the original design; the twelve accents reproduce its evenly spaced selection along the sorted decline list. These are ornamental choices, not catchments, density, funding scales, or vulnerability scores. They are excluded from analytical legends and click queries.
+## Venue rings and discipline colors (Chapters 1 and 7)
 
-Legends now state the dataset, fiscal year, counting unit, USD height measure, NTA identity, and projected half-mile distance where relevant. Chapters 4–5 include an expandable full NTA color key. Decorative rings in Chapters 1 and 8 are omitted.
+All 2,268 geolocated DCLA records are drawn as equal-size, single-outline rings. Color comes from the recorded DCLA discipline field, with 21 categories including Not recorded. The Python export supplies type colors and category record counts. Ring size changes only with zoom for legibility; it never represents funding, distance, density, or importance. Co-located records remain at their original coordinates and can overlap. There is no clustering, jitter, or invented venue location. The earlier ornamental concentric rings and squares have been removed from Chapter 1 and from the public data exports.
+
+The website and Figma use the same type palette in Chapters 1 and 7. The full category key shows record counts, not a historical count of open venues and not discipline-specific NEA funding. The directory-to-NEA discipline linkage remains pending.
