@@ -161,3 +161,10 @@ Those remain explicit research or scenario steps.
 - DuckDB Spatial functions: https://duckdb.org/docs/1.4/core_extensions/spatial/functions
 - GeoPandas dissolve: https://geopandas.org/en/stable/docs/user_guide/aggregation_with_dissolve.html
 - Census geocoder: https://geocoding.geo.census.gov/
+
+
+## Chapter 1 ornamental layers
+
+The Python export keeps `intro-ring-centers` and `intro-accents` separate from the analytical buffers. They reproduce the Figma composition: fixed-radius concentric rings (3, 5, 8, and 12 screen pixels), 22-pixel pastel outer rings, and 20-pixel translucent square accents. The first set uses FY2024 recipients above $50,000 as in the original design; the twelve accents reproduce its evenly spaced selection along the sorted decline list. These are ornamental choices, not catchments, density, funding scales, or vulnerability scores. They are excluded from analytical legends and click queries.
+
+Legends now state the dataset, fiscal year, counting unit, USD height measure, NTA identity, and projected half-mile distance where relevant. Chapters 4–5 include an expandable full NTA color key. Decorative rings in Chapters 1 and 8 are omitted.

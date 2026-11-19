@@ -1,8 +1,3 @@
-"""Rebuild the story's data with Python, DuckDB SQL, and full NYC geography.
-
-Run from VS Code or import run_pipeline() from the accompanying VS Code notebook.
-The source CSVs are read-only. New web files are published only after checks pass.
-"""
 import argparse
 import colorsys
 import csv
@@ -108,12 +103,19 @@ def export_web(connection, staging, palette, chapters_path):
         'positive2024':connection.sql('SELECT count(*) FROM recipients WHERE cents2024>0').fetchone()[0],
         'positive2025':connection.sql('SELECT count(*) FROM recipients WHERE cents2025>0').fetchone()[0],
         'declines':connection.sql('SELECT count(*) FROM recipients WHERE change_cents<0').fetchone()[0]}
+    stats['directory_records'] = connection.sql('SELECT count(*) FROM directory').fetchone()[0]
+    for year in [2024,2025]:
+        stats[f'mapped_positive{year}'] = connection.sql(
+            f'SELECT count(*) FROM recipient_points WHERE cents{year}>0').fetchone()[0]
+    nta_legend = [{'id':n['id'],'name':n['name'],'color':n['color']} for n in neighborhoods]
     write_json(staging/'funding.json',dict(recipients=recipients,neighborhoods=neighborhoods,
-                                         anchors=anchors,stats=stats,palette=palette))
+                                         anchors=anchors,stats=stats,palette=palette,ntaLegend=nta_legend))
 
     nta_geometries = geometry_lookup(connection, f'SELECT id,{wgs84("ST_SimplifyPreserveTopology(geom,35)")} FROM ntas')
+    active_nta_ids = {n['id'] for n in neighborhoods}
     ntas = features([feature(nta_geometries[uid],{'nta2020':uid,'ntaname':name,'boroname':borough,
-                                                'color':palette.get(uid,'#deded7')})
+                                                'color':palette.get(uid,'#deded7'),
+                                                'has_funding_records':uid in active_nta_ids})
                     for uid,name,borough in connection.sql('SELECT id,name,borough FROM ntas ORDER BY id').fetchall()])
     directory = features([feature({'type':'Point','coordinates':[lon,lat]},
                          {'record_id':uid,'name':name,'discipline':discipline})
@@ -153,13 +155,28 @@ def export_web(connection, staging, palette, chapters_path):
         links.append(feature(json.loads(geometry),{'from_id':a,'to_id':b,
             'name':anchors_by_id[a]['name']+' / '+anchors_by_id[b]['name'],
             'distance_feet':distance,'kind':'proposal'}))
+    # Reproduce the first Figma map's ornamental composition separately from
+    # analytical buffers. These are not catchments, counts, or risk measures.
+    intro_rings = [point({'coordinates':r['coordinates'],'kind':'decoration'})
+                   for r in recipients if r['coordinates'] and r['fy2024']>50000]
+    decoration_candidates = sorted(
+        [r for r in recipients if r['coordinates'] and r['change']<0
+         and max(r['fy2024'],r['fy2025'])>0],
+        key=lambda r:(-r['change'],r['coordinates'][0],-r['coordinates'][1],r['id']),
+        reverse=True)
+    step = max(1,len(decoration_candidates)//12)
+    intro_accents = [point({'coordinates':r['coordinates'],'kind':'decoration',
+                            'color':colors[i%len(colors)]})
+                     for i,r in enumerate(decoration_candidates[::step][:12])]
     map_sources = {
         'recipients':features([point(r) for r in recipients if r['coordinates']]),
         'funding-columns':features(funding_columns),'nta-columns':features(paired),
         'negative-ntas':features([point(n) for n in neighborhoods if min(n['fy2024'],n['fy2025'])<0]),
         'anchors':features([point(a) for a in anchors]),
         'buffers':features([feature(buffer_geometries[a['id']],{**a,'kind':'buffer'}) for a in anchors]),
-        'proposal':features(links)
+        'proposal':features(links),
+        'intro-ring-centers':features(intro_rings),
+        'intro-accents':features(intro_accents)
     }
     write_json(staging/'map-sources.json',map_sources)
     chapters = json.loads(chapters_path.read_text())

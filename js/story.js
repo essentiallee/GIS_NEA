@@ -62,9 +62,23 @@ function addMapLayers(prepared, ntas, directory) {
     'circle-radius': 1.7, 'circle-color': '#484a44', 'circle-opacity': .35,
     'circle-stroke-width': 0
   });
-  layer('emphasis-rings', 'circle', 'anchors', {
-    'circle-radius': 15, 'circle-color': ['get', 'color'], 'circle-opacity': .05,
-    'circle-stroke-color': ['get', 'color'], 'circle-stroke-width': .6, 'circle-stroke-opacity': .5
+  // Figma's concentric-ring and square composition is ornamental. Its locations
+  // come from the Python export; these layers never appear in the data legend.
+  for (const radius of [3,5,8,12]) {
+    layer(`intro-ring-${radius}`, 'circle', 'intro-ring-centers', {
+      'circle-radius': radius, 'circle-opacity': 0,
+      'circle-stroke-color': '#41443b', 'circle-stroke-width': .4,
+      'circle-stroke-opacity': .3
+    });
+  }
+  const square = new Uint8Array(20*20*4).fill(255);
+  map.addImage('intro-square', {width:20,height:20,data:square}, {sdf:true});
+  layer('intro-patches', 'symbol', 'intro-accents', {
+    'icon-color':['get','color'], 'icon-opacity':.24
+  }, {layout:{'icon-image':'intro-square','icon-allow-overlap':true,'icon-ignore-placement':true}});
+  layer('intro-outer-rings', 'circle', 'intro-accents', {
+    'circle-radius':22,'circle-opacity':0,'circle-stroke-color':['get','color'],
+    'circle-stroke-width':.5,'circle-stroke-opacity':.35
   });
   layer('buffers-fill', 'fill', 'buffers', { 'fill-color': ['get', 'color'], 'fill-opacity': .12 });
   layer('buffers-lines', 'line', 'buffers', { 'line-color': ['get', 'color'], 'line-width': .7, 'line-opacity': .65 });
@@ -118,7 +132,9 @@ function animateFunding(target) {
 
 function camera(index, duration = 1300) {
   const tilted = index >= 1 && index <= 4;
-  map.easeTo({ center: [-73.98, 40.71], zoom: baseZoom - (tilted ? .3 : 0),
+  const introInset = index === 0 && map.getContainer().clientWidth >= 600 ? .35 : 0;
+  const center = introInset ? [-73.94,40.687] : [-73.98,40.71];
+  map.easeTo({ center, zoom: baseZoom - (tilted ? .3 : introInset),
     pitch: tilted ? 52 : 0, bearing: tilted ? -10 : 0,
     duration: reduceMotion ? 0 : duration, essential: false });
 }
@@ -126,26 +142,46 @@ function camera(index, duration = 1300) {
 function renderLegend(index, data) {
   const palette = data.palette;
   const key = palette.MN0502 || '#a998b6';
+  const directoryCount = data.stats.directory_records;
   const rows = [
-    [['#484a44','Current DCLA directory records'], ['#db567f','Fine rings: visual emphasis','ring']],
-    [[green,'FY2024 positive recipient funding'], ['#b9bcb4','NTA boundaries','line']],
-    [[rose,'FY2025 positive recipient funding'], ['#b9bcb4','Ground mark remains when positive funding is zero','ring']],
-    [[palette.MN0502,'Midtown–Times Square'], [palette.BK0203,'Fort Greene'], [palette.MN1001,'Harlem (South)']],
-    [[lighten(key,.56),'Pale NTA hue: FY2024'], [key,'Saturated version of the same hue: FY2025'], ['#a998b6','Outlined ground mark: negative annual net amount','ring']],
-    [['#484a44','Selected recipients with lower funding'], ['#e6c95f','Half-mile straight-line buffers','ring'], ['#b9bcb4','Directory records inside / outside the buffers']],
-    [['#db567f','Theater'], ['#6b967e','Music'], ['#e6c95f','Dance'], ['#a998b6','Visual arts'], ['#b9bcb4','Other / unknown discipline']],
-    [['#6b967e','Proposed relationships, not observed transfers','dashed'], ['#db567f','Hypothetical shared support','ring']]
+    [['#484a44',`${directoryCount.toLocaleString()} geolocated DCLA directory records · October 2026`,'dot'],
+      ['#b9bcb4','2020 Neighborhood Tabulation Area (NTA) boundaries','line']],
+    [[green,`${data.stats.mapped_positive2024} mapped NEA recipients with positive FY2024 net funding`,'column'],
+      [green,'Hollow point: no positive FY2024 net amount in the FY2024–25 comparison cohort','ring'],
+      ['#484a44','Faint dots: DCLA directory locations, for context','dot']],
+    [[rose,`${data.stats.mapped_positive2025} mapped NEA recipients with positive FY2025 net funding`,'column'],
+      [rose,'Hollow point: no positive FY2025 net amount in the FY2024–25 comparison cohort','ring'],
+      ['#484a44','Faint dots: DCLA directory locations, for context','dot']],
+    [[palette.MN0502,'Midtown–Times Square · MN0502'],
+      [palette.BK0203,'Fort Greene · BK0203'],
+      [palette.MN1001,'Harlem (South) · MN1001']],
+    [[lighten(key,.56),'Pale column: FY2024 NTA total (example hue: Midtown–Times Square)','column'],
+      [key,'Saturated column: FY2025 total for the same NTA','column'],
+      ['#999999','Outlined ground point: NTA has a negative annual net amount','ring']],
+    [['#484a44','12 NEA recipients selected by largest FY2024→25 dollar decline, one per coordinate','dot'],
+      ['#999999','Buffer boundary: 0.5-mile radius = 2,640 US survey feet','ring'],
+      ['#484a44','Small dots: DCLA directory records; nearby counts include only those inside each buffer','dot']],
+    [['#db567f','DCLA discipline: Theater','dot'],
+      ['#6b967e','DCLA discipline: Music','dot'],
+      ['#e6c95f','DCLA discipline: Dance','dot'],
+      ['#a998b6','DCLA discipline: Visual Arts','dot'],
+      ['#b9bcb4','Other recorded disciplines / discipline not recorded','dot']],
+    [['#484a44','Nodes: the 12 selected NEA recipients with recorded funding declines','dot'],
+      ['#6b967e','Links: each example connects to its nearest other selected example','dashed']]
   ];
   const notes = [
-    '2026 directory context; this is not a verified closure inventory.',
-    'Height = funding, not building height. Same recipient scale in Chapters 2–4.',
-    'Same height scale as FY2024. No award does not establish closure.',
-    'Example NTA hues. Each NTA has its own color; height = FY2025 recipient funding.',
-    'Same NTA hues as Chapter 4. Both years share a separate neighborhood height scale.',
-    '12 examples selected by dollar decline, one per coordinate. Counts include co-located records.',
-    'DCLA directory categories; the discipline-to-NEA funding linkage remains pending.',
-    'Illustrative network only. No reserve balances, transfer amounts, or survival results are calculated.'
+    'One dot = one directory record; co-located records and aliases are retained. This snapshot does not establish 2019–25 closures.',
+    'One column = one recipient. Height is linear in annual net NEA obligations (USD), not building height. The same scale is used in Chapters 2–4.',
+    'Height is annual net NEA obligations (USD), using the FY2024 height scale. A missing positive amount does not establish institutional closure.',
+    'Example NTA hues are listed above; the full key is below. Color identifies neighborhood, not funding rank. Height = positive FY2025 recipient net obligations (USD).',
+    'One pair = one NTA total, placed inside its polygon. Both years share a neighborhood height scale, different from recipient columns. Click for signed dollar amounts.',
+    'Counts use projected straight-line distance, not walking time. Directory duplicates, co-located records, and the recipient itself where present remain included.',
+    'One point = one DCLA directory record, October 2026. These categories are not yet linked to NEA funding losses.',
+    'Nearest neighbors use projected distance among these 12 examples only. Links are illustrative proposals, not verified partnerships or transfers; line width encodes no amount.'
   ];
+  if (index === 3) rows[index].push(['#999999','Hollow point: no positive FY2025 recipient net amount','ring']);
+  if (index > 0) rows[index].push(['#b9bcb4','2020 NTA boundaries','line']);
+  if ([3,4,7].includes(index)) rows[index].push(['#484a44','Faint dots: DCLA directory locations, for context','dot']);
   const titles = ['CULTURAL LANDSCAPE','FY2024 FUNDING','FY2025 FUNDING','RECIPIENTS BY NTA',
     'TWO YEARS WITHIN EACH NTA','HALF-MILE PROXIMITY','DIRECTORY DISCIPLINES','PROPOSED ALLIANCE'];
   legend.replaceChildren();
@@ -162,6 +198,27 @@ function renderLegend(index, data) {
   });
   const note = document.createElement('p'); note.className = 'legend-note'; note.textContent = notes[index];
   legend.append(note);
+  if (index === 1 || index === 2 || index === 4) {
+    const scale = document.createElement('p'); scale.className = 'legend-note legend-scale';
+    scale.textContent = index === 4 ?
+      'Linear height reference: $1,000,000 is 4× the height of $250,000.' :
+      'Linear height reference: $100,000 is 4× the height of $25,000.';
+    legend.append(scale);
+  }
+  if (index === 3 || index === 4) {
+    const details = document.createElement('details'); details.className = 'nta-key';
+    const summary = document.createElement('summary');
+    summary.textContent = `All ${data.ntaLegend.length} NTA colors — names and codes`;
+    const list = document.createElement('div'); list.className = 'nta-key-list';
+    for (const nta of data.ntaLegend) {
+      const row = document.createElement('div'); row.className = 'legend-row';
+      const swatch = document.createElement('span'); swatch.className = 'swatch';
+      swatch.style.setProperty('--color', nta.color);
+      const text = document.createElement('span'); text.textContent = `${nta.name} · ${nta.id}`;
+      row.append(swatch,text); list.append(row);
+    }
+    details.append(summary,list); legend.append(details);
+  }
   document.querySelector('#map-label').textContent = title.textContent;
 }
 
@@ -173,17 +230,25 @@ function activate(index, data) {
   if (!ready) return;
   popup?.remove();
   camera(index);
-  ['emphasis-rings','buffers-fill','buffers-lines','proposal-links','proposal-rings',
+  ['intro-ring-3','intro-ring-5','intro-ring-8','intro-ring-12','intro-patches','intro-outer-rings','buffers-fill','buffers-lines','proposal-links','proposal-rings',
     'recipient-ground','funding','nta-funding','negative-markers','anchor-points'].forEach(id => visible(id, false));
-  map.setPaintProperty('nta-fill', 'fill-opacity', index === 3 ? .1 : index === 4 ? .04 : 0);
+  map.setPaintProperty('nta-fill', 'fill-opacity', ['case',['get','has_funding_records'], index === 3 ? .1 : index === 4 ? .04 : 0, 0]);
+  map.setPaintProperty('nta-lines','line-width',index === 0 ? .35 : .45);
   map.setPaintProperty('directory-points','circle-color', index === 6 ?
     ['match',['get','discipline'],'Theater','#db567f','Music','#6b967e','Dance','#e6c95f','Visual Arts','#a998b6','#b9bcb4'] : '#484a44');
-  map.setPaintProperty('directory-points','circle-radius', index === 6 ? 2.7 : 1.7);
-  map.setPaintProperty('directory-points','circle-opacity', index === 6 ? .75 : index === 0 ? .4 : .16);
-  if (index === 0) visible('emphasis-rings', true);
+  map.setPaintProperty('directory-points','circle-radius', index === 6 ? 2.7 : index === 0 ? .8 : 1.7);
+  map.setPaintProperty('directory-points','circle-opacity', index === 6 ? .75 : index === 0 ? .3 : .16);
+  if (index === 0) ['intro-ring-3','intro-ring-5','intro-ring-8','intro-ring-12','intro-patches','intro-outer-rings'].forEach(id => visible(id,true));
   if (index >= 1 && index <= 3) {
     visible('funding', true); visible('recipient-ground', true);
     map.setPaintProperty('recipient-ground','circle-color', index === 1 ? green : index === 3 ? ['get','color'] : rose);
+    const yearField = index === 1 ? 'fy2024' : 'fy2025';
+    const zero = ['<=',['get',yearField],0];
+    const pointColor = index === 1 ? green : index === 3 ? ['get','color'] : rose;
+    map.setPaintProperty('recipient-ground','circle-opacity',['case',zero,0,.25]);
+    map.setPaintProperty('recipient-ground','circle-stroke-color',pointColor);
+    map.setPaintProperty('recipient-ground','circle-stroke-width',1);
+    map.setPaintProperty('recipient-ground','circle-stroke-opacity',['case',zero,.8,0]);
   }
   if (index === 4) { visible('nta-funding', true); visible('negative-markers', true); }
   if (index === 5) ['buffers-fill','buffers-lines','anchor-points'].forEach(id => visible(id,true));

@@ -15,13 +15,19 @@ button:focus-visible,a:focus-visible,#story:focus-visible{outline:1px solid #739
 .map-caption button{border:0;background:var(--paper);padding:5px;pointer-events:auto;font-size:10px}
 #map-status{position:absolute;top:50%;left:30px;right:30px;font-size:12px;text-align:center;pointer-events:none}
 #map-status[hidden]{display:none}
-#legend{position:absolute;bottom:76px;left:30px;max-width:calc(100% - 100px);padding:8px 10px 8px 0;background:rgba(250,249,243,.94);font-size:11px;line-height:1.6;pointer-events:auto}
+#legend{position:absolute;bottom:76px;left:30px;max-width:calc(100% - 100px);max-height:45%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:8px 10px 8px 0;background:rgba(250,249,243,.94);font-size:11px;line-height:1.6;pointer-events:auto}
 .legend-title{font-size:10px;font-weight:400;margin:0 0 7px;letter-spacing:.015em}
 .legend-row{display:flex;align-items:center;gap:10px;margin:3px 0}
 .swatch{width:12px;height:8px;flex:none;background:var(--color,#b9bcb4)}
 .swatch.ring{width:10px;height:10px;border:1px solid var(--color);border-radius:50%;background:none}
 .swatch.line{height:0;border-top:1px solid var(--color);background:none}
 .swatch.dashed{height:0;border-top:1px dashed var(--color);background:none}
+.swatch.dot{width:5px;height:5px;border-radius:50%;margin:0 3.5px}
+.swatch.column{width:5px;height:15px;margin:0 3.5px}
+.legend-scale{font-variant-numeric:tabular-nums}
+.nta-key{margin-top:8px;font-size:10px;line-height:1.6}
+.nta-key summary{cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.nta-key-list{max-height:155px;overflow-y:auto;overscroll-behavior:contain;padding:5px 8px 0 0;scrollbar-width:thin}
 .legend-note{max-width:560px;font-size:10px;margin:7px 0 0;line-height:1.5}
 .map-footer{position:absolute;left:30px;right:30px;bottom:20px;display:flex;justify-content:space-between;gap:12px;font-size:9px;pointer-events:none}
 .map-footer a{pointer-events:auto}
