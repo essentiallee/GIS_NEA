@@ -1,0 +1,5 @@
+{
+  "source_dir": "../../SMT_Sandbox/data/Processed",
+  "tracts": "../../SMT_Sandbox/data/Original/zoning related/dcp_ct2020_wi.shp/dcp_ct2020_wi.shp",
+  "directory_csv": "/path/to/DCLA_Cultural_Organizations_20261022.csv"
+}

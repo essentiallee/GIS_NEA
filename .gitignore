@@ -1,0 +1,7 @@
+# Local environment, source paths, and self-contained analysis database.
+.venv/
+__pycache__/
+*.pyc
+processing/config.local.json
+processing/build/
+.ipynb_checkpoints/

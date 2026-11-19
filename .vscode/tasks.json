@@ -13,6 +13,40 @@
         "reveal": "silent",
         "panel": "shared"
       }
+    },
+    {
+      "label": "Rebuild map data (Python)",
+      "type": "process",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "args": [
+        "processing/pipeline.py"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Query map data (DuckDB)",
+      "type": "process",
+      "command": "${workspaceFolder}/.venv/bin/python",
+      "args": [
+        "processing/query.py",
+        "--sql",
+        "${input:duckdbSql}"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "duckdbSql",
+      "type": "promptString",
+      "description": "Read-only SQL query",
+      "default": "SELECT * FROM accounting"
     }
   ]
 }
