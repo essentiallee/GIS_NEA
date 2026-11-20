@@ -1,14 +1,14 @@
 [
   {
-    "title": "A changing cultural landscape",
-    "lead": "A city of cultural institutions, under pressure from the pandemic and changing economic conditions.",
-    "metric": "2019 \u2014 2025",
-    "caption": "Historical scope \u00b7 closure verification still required",
-    "method": "First establish what existed, what closed, and what remains uncertain. A missing grant or directory record is not proof of closure.",
-    "status": "CONTEXT / EVIDENCE NEEDED",
-    "legend": "Dark centers: current directory records\nFine rings: visual emphasis, not closure status",
-    "source": "Map: DCLA directory, Oct 2026; NYC DCP NTA geography.\nHistorical operating status is not yet verified.",
-    "next": "NEXT / Establish the FY2024 funding baseline.",
+    "title": "A Changing Cultural Landscape",
+    "lead": "New York is a global hub of cultural activity ranging in diverse media and practices, from visual practices to even science and new media. Many of cultural venues in the US is a beneficiary of the Nation Endowments of the Arts (NEA), allocating its yearly budget according to policies and programs that are designed and planned by the institutions. However, NEA is often targeted for its effectiveness throughout history starting from the 1980\u2019s. But the NEA reaches many American lives directly and indirectly. How is the federal policy on the arts changing today and how could we reimagine the protocols of distribution, measured on the precarity of the art world?",
+    "metric": "2,268 mapped records",
+    "caption": "DCLA Cultural Organizations directory \u00b7 supplied file dated October 22, 2026",
+    "method": "Each equal-size ring marks one directory record at its supplied coordinates. Color identifies its recorded DCLA discipline. Records at the same location may overlap. This maps locations and categories\u2014not funding, institutional survival, or vulnerability.",
+    "status": "DIRECTORY / POINT MAPPING",
+    "legend": "Equal-size rings: DCLA directory records; color: recorded discipline. Pale lines: 2020 NTA boundaries.",
+    "source": "DCLA / NYC Open Data, u35m-9t32: 2,535 source records; 267 lack coordinates within the display extent and are not drawn. The file date does not verify each entry\u2019s update date or operating status. DCLA records are not necessarily NEA recipients. Boundaries: NYC DCP, 2020 NTAs. Context: NEA About; NEA 1989 Annual Report.",
+    "next": "NEXT / Compare this broader directory with the FY2024 NEA recipient record.",
     "number": "01 / 08"
   },
   {

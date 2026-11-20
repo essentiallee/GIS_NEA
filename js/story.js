@@ -30,6 +30,27 @@ const map = new maplibregl.Map({
 });
 map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
 map.addControl(new maplibregl.ScaleControl({ maxWidth: 70, unit: 'metric' }), 'bottom-right');
+// Keep the north arrow directly above the scale as it changes with zoom.
+const scaleElement=document.querySelector('.maplibregl-ctrl-scale');
+const scaleGroup=document.createElement('div');
+scaleGroup.className='maplibregl-ctrl scale-with-north';
+scaleElement.before(scaleGroup);
+const north=document.createElement('div');
+north.className='north-indicator';
+north.setAttribute('role','img');
+north.setAttribute('aria-label','North');
+north.innerHTML='<span>N</span><svg viewBox="0 0 24 30" aria-hidden="true"><path d="M12 27V3M6 10l6-7 6 7" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+scaleGroup.append(north,scaleElement);
+function updateNorth(){
+  // Project a short geographic northward line so the arrow respects tilt too.
+  const center=map.getCenter();
+  const origin=map.project(center);
+  const target=map.project([center.lng,Math.min(85,center.lat+.01)]);
+  const angle=Math.atan2(target.x-origin.x,origin.y-target.y)*180/Math.PI;
+  north.querySelector('svg').style.transform='rotate('+angle+'deg)';
+}
+map.on('move',updateNorth);
+updateNorth();
 map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
 map.on('error', event => {
   console.error(event.error);

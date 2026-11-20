@@ -162,3 +162,9 @@ h1{font-size:15px;line-height:22px;font-weight:700;margin:0}
 #change-chart{position:static;inset:auto;margin-top:20px}
 #chart-rows{max-height:340px}
 }
+
+/* Geographic north stays attached to the dynamically sized distance scale. */
+.scale-with-north{display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+.scale-with-north .maplibregl-ctrl-scale{float:none!important;margin:0!important}
+.north-indicator{display:flex;flex-direction:column;align-items:center;gap:3px;color:#a1a1a1;font-size:9px;line-height:12px;font-family:'Space Mono',monospace}
+.north-indicator svg{display:block;width:22px;height:28px;transform-origin:center}

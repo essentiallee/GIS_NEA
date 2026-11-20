@@ -47,3 +47,17 @@ Original downloads remain outside this public website folder.
 ## Python rebuild and query workflow
 
 All data preparation is now in `processing/pipeline.py` and its SQL files. The annotated `processing/workflow.ipynb` runs the same workflow locally in VS Code. Edit chapter writing in `content/chapters.json`; `data/chapters.json` is regenerated. See `processing/README.md` for input paths, accounting rules, query examples, and outputs. `data/processing-manifest.json` records hashes, versions, counts, and the NTA audit. The local DuckDB database, extension cache, and CSV/Parquet reports are in the ignored `processing/build/` directory.
+
+
+## Chapter 1: directory scope and historical context
+
+Chapter 1 maps 2,268 of 2,535 records in the supplied file
+`DCLA_Cultural_Organizations_20261022.csv`. October 22, 2026 is the date
+encoded in the supplied filename, not a verified last-update date for each
+organization. The map does not establish a complete 2026 inventory, current
+operating status, NEA funding receipt, or change since 2019. Equal-size point
+symbols use the directory's recorded discipline; co-located records may overlap.
+
+- [DCLA Cultural Organizations, NYC Open Data (u35m-9t32)](https://data.cityofnewyork.us/d/u35m-9t32).
+- [National Endowment for the Arts, About](https://www.arts.gov/about): agency role and arts participation.
+- [National Endowment for the Arts, 1989 Annual Report](https://www.arts.gov/sites/default/files/NEA-Annual-Report-1989.pdf): historical context for funding controversy.
