@@ -197,7 +197,7 @@ function renderLegend(index, data) {
   legend.classList.toggle('venue-legend',index === 0 || index === 6);
   const notes = [
     `${directoryCount.toLocaleString()} mapped DCLA records · October 2026. Equal-size ring = one record; color = recorded discipline. Co-located records remain overlapped; operating status unverified.`,
-    'One column = one recipient. Height is linear in annual net NEA obligations (USD), not building height. The same scale is used in Chapters 2–4.',
+    '',
     'Total funding fell 58.1%, unevenly: 112 mapped recipients increased; 351 decreased. Heights use the same scale as FY2024 and show positive net amounts only. Lincoln Center: $145,000 to −$75,000; its bar stops at zero, while the signed −$220,000 change remains in the records. Extremes are ranked by mapped recipient dollar change; tied increases are both highlighted.',
     'Example NTA hues are listed above; the full key is below. Color identifies neighborhood, not funding rank. Height = positive FY2025 recipient net obligations (USD).',
     'One bar = one NTA, using the same neighborhood hue as Chapter 4. All decrease magnitudes are stacked below all increase magnitudes. Height = total absolute recipient change, not net funding: net change = upper gains minus lower losses. $100,000 = 1,200 map meters; this is not building height. Select a slice to inspect its recipient.',
@@ -226,8 +226,8 @@ function renderLegend(index, data) {
     row.append(swatch, text); rowsContainer.append(row);
   });
   const note = document.createElement('p'); note.className = 'legend-note'; note.textContent = notes[index];
-  legend.append(note);
-  if (index === 1 || index === 2) {
+  if(notes[index]) legend.append(note);
+  if (index === 2) {
     const scale = document.createElement('p'); scale.className = 'legend-note legend-scale';
     scale.textContent = index === 4 ?
       'Linear height reference: $1,000,000 is 4× the height of $250,000.' :

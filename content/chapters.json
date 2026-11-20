@@ -12,14 +12,14 @@
     "number": "01 / 08"
   },
   {
-    "title": "The FY2024 baseline",
-    "lead": "Start with the observed funding record. Count recipients separately from physical venues.",
+    "title": "Fiscal Year 2024 Baseline",
+    "lead": "In 2024, the executive announcement targeted the National Endowments of the Arts to drastically cut the funds for the following year\u2019s budget. According to USA Spendings records of NEA grant recipients, 434 institutions were allocated with funds from a total of $15.42M pool.",
     "metric": "434 recipients",
     "caption": "$15.42M recorded in FY2024",
     "method": "Signed transactions are summed by recipient and fiscal year. Column height shows positive net funding. Unlocated recipients remain in the overall totals.",
     "status": "OBSERVED / PROCESSED RECORDS",
     "legend": "Green: FY2024 funding",
-    "source": "NEA / USAspending processed transaction records.\n434 recipients with positive annual net funding; totals include signed amounts.",
+    "source": "USAspending / NEA processed NYC recipient transactions, FY2024: 434 recipients with positive net amounts; $15,415,348.31 in signed net obligations. This is the project\u2019s NYC scope, not the national NEA budget. Policy timeline correction: proposed elimination was announced in 2025 for FY2026\u2014not in 2024 for FY2025. Source: NEA FY2026 Congressional Budget Request.",
     "next": "NEXT / Hold the geography steady and compare FY2025.",
     "number": "02 / 08"
   },

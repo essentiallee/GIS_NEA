@@ -18,7 +18,7 @@ button:focus-visible,a:focus-visible,#story:focus-visible{outline:1px solid #739
 #map-status[hidden]{display:none}
 
 /* The map stays interactive; the legend floats above it. */
-#legend{position:absolute;bottom:39px;left:41px;width:684px;max-width:calc(100% - 82px);min-height:221px;max-height:45%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:20px 40px;background:#fff;border:1px solid #eeede9;border-radius:40px;box-shadow:var(--card-shadow);font-size:9px;line-height:14px;pointer-events:auto}
+#legend{position:absolute;bottom:39px;left:41px;width:684px;max-width:calc(100% - 82px);min-height:0;height:auto;max-height:45%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:20px 40px;background:#fff;border:1px solid #eeede9;border-radius:40px;box-shadow:var(--card-shadow);font-size:9px;line-height:14px;pointer-events:auto}
 .legend-title{font-size:10px;font-weight:400;line-height:14px;margin:0 0 8px;letter-spacing:.015em}
 .legend-row{display:flex;align-items:center;gap:8px;margin:3px 0;min-width:0}
 .legend-row>span:last-child{min-width:0;overflow-wrap:anywhere}
