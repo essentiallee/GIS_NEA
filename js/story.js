@@ -14,6 +14,8 @@ let ready = false;
 let animation = 0;
 let baseZoom = 9.5;
 let popup;
+let transitionProgress = 1;
+const legendOpen = {3:false};
 let values = { growth: 0, year: 0, group: 0 };
 
 const map = new maplibregl.Map({
@@ -35,6 +37,7 @@ map.on('error', event => {
   status.textContent = 'The map could not load. Refresh the page to try again.';
 });
 
+function darken(hex) { return '#' + hex.slice(1).match(/../g).map(c=>Math.round(parseInt(c,16)*.7).toString(16).padStart(2,'0')).join(''); }
 function lighten(hex, fraction) {
   const channels = hex.slice(1).match(/../g);
   return '#' + channels.map(channel => {
@@ -57,13 +60,14 @@ function addMapLayers(prepared, ntas, directory) {
   for (const [id, geojson] of Object.entries(prepared)) source(id, geojson);
 
   layer('nta-fill', 'fill', 'ntas', { 'fill-color': ['get', 'color'], 'fill-opacity': 0 });
+  layer('nta-change','fill','ntas',{'fill-color':['get','change_color'],'fill-opacity':.72},{layout:{visibility:'none'}});
   layer('nta-lines', 'line', 'ntas', { 'line-color': '#b9bcb4', 'line-width': .45, 'line-opacity': .7 });
   layer('directory-points', 'circle', 'directory', {
     'circle-radius': 1.7, 'circle-color': '#484a44', 'circle-opacity': .35,
     'circle-stroke-width': 0
   });
-  layer('buffers-fill', 'fill', 'buffers', { 'fill-color': ['get', 'color'], 'fill-opacity': .12 });
-  layer('buffers-lines', 'line', 'buffers', { 'line-color': ['get', 'color'], 'line-width': .7, 'line-opacity': .65 });
+  layer('buffers-fill', 'fill', 'buffers', { 'fill-color': '#999999', 'fill-opacity': .025 });
+  layer('buffers-lines', 'line', 'buffers', { 'line-color': '#888888', 'line-width': .85, 'line-opacity': .65 });
   layer('proposal-links', 'line', 'proposal', { 'line-color': '#6b967e', 'line-width': 1, 'line-dasharray': [3, 4], 'line-opacity': .7 });
   layer('proposal-rings', 'circle', 'anchors', {
     'circle-radius': 25, 'circle-color': ['get', 'color'], 'circle-opacity': .1,
@@ -77,9 +81,19 @@ function addMapLayers(prepared, ntas, directory) {
     'fill-extrusion-height-transition': { duration: 0 },
     'fill-extrusion-color-transition': { duration: 0 }
   });
+  layer('change-extremes','circle','change-extreme-points',{
+    'circle-radius':6,'circle-color':'#ffffff','circle-opacity':0,
+    'circle-stroke-width':2,'circle-stroke-color':['case',['==',['get','extreme'],'gain'],'#39785f','#c44d72']
+  },{filter:['!=',['get','extreme'],'']});
   layer('nta-funding', 'fill-extrusion', 'nta-columns', {
     'fill-extrusion-color': ['get', 'color'], 'fill-extrusion-height': ['get', 'height'],
     'fill-extrusion-base': 0, 'fill-extrusion-opacity': .92
+  });
+  layer('nta-change-stacks','fill-extrusion','nta-change-columns',{
+    'fill-extrusion-color':['get','color'],
+    'fill-extrusion-base':['get','base'],
+    'fill-extrusion-height':['get','height'],
+    'fill-extrusion-opacity':.94
   });
   layer('negative-markers', 'circle', 'negative-ntas', { 'circle-radius': 5, 'circle-opacity': 0,
     'circle-stroke-width': 1.2, 'circle-stroke-color': ['get', 'color'] });
@@ -92,6 +106,12 @@ function paintFunding() {
   const { growth, year, group } = values;
   map.setPaintProperty('funding', 'fill-extrusion-height', ['*', growth,
     ['+', ['*', 1-year, ['get', 'h24']], ['*', year, ['get', 'h25']]]]);
+  if(activeChapter===2){
+    const direction=['case',['>',['get','change'],0],green,['<',['get','change'],0],rose,'#b9bcb4'];
+    const finalColor=['case',['==',['get','extreme'],'gain'],'#39785f',['==',['get','extreme'],'loss'],'#c44d72','#c7c8c2'];
+    map.setPaintProperty('funding','fill-extrusion-color',transitionProgress<1?direction:finalColor);
+    return;
+  }
   const yearColor = ['interpolate', ['linear'], year, 0, green, 1, rose];
   map.setPaintProperty('funding', 'fill-extrusion-color',
     ['interpolate', ['linear'], group, 0, yearColor, 1, ['get', 'color']]);
@@ -106,6 +126,7 @@ function animateFunding(target) {
     const t = duration ? Math.min(1, (now-began)/duration) : 1;
     const ease = t*t*(3-2*t);
     for (const key of Object.keys(start)) values[key] = start[key] + (target[key]-start[key])*ease;
+    transitionProgress=t;
     paintFunding();
     if (t < 1) animation = requestAnimationFrame(frame);
   }
@@ -132,18 +153,21 @@ function renderLegend(index, data) {
     [[green,`${data.stats.mapped_positive2024} mapped NEA recipients with positive FY2024 net funding`,'column'],
       [green,'Hollow point: no positive FY2024 net amount in the FY2024–25 comparison cohort','ring'],
       ['#484a44','Faint dots: DCLA directory locations, for context','dot']],
-    [[rose,`${data.stats.mapped_positive2025} mapped NEA recipients with positive FY2025 net funding`,'column'],
-      [rose,'Hollow point: no positive FY2025 net amount in the FY2024–25 comparison cohort','ring'],
+    [[green,'During movement: green bars grow; rose bars shrink','column'],
+      ['#39785f','After movement: largest increase +$150,000 each — Icahn School of Medicine; Urban Health Plan','column'],
+      ['#c44d72','Largest drop −$220,000 — Lincoln Center; outlined ground marker remains','ring'],
+      ['#c7c8c2','Other FY2025 bars fade to gray after the transition','column'],
+      ['#b9bcb4','Hollow point: no positive FY2025 net amount; not proof of closure','ring'],
       ['#484a44','Faint dots: DCLA directory locations, for context','dot']],
     [[palette.MN0502,'Midtown–Times Square · MN0502'],
       [palette.BK0203,'Fort Greene · BK0203'],
       [palette.MN1001,'Harlem (South) · MN1001']],
-    [[lighten(key,.56),'Pale column: FY2024 NTA total (example hue: Midtown–Times Square)','column'],
-      [key,'Saturated column: FY2025 total for the same NTA','column'],
-      ['#999999','Outlined ground point: NTA has a negative annual net amount','ring']],
-    [['#484a44','12 NEA recipients selected by largest FY2024→25 dollar decline, one per coordinate','dot'],
-      ['#999999','Buffer boundary: 0.5-mile radius = 2,640 US survey feet','ring'],
-      ['#484a44','Small dots: DCLA directory records; nearby counts include only those inside each buffer','dot']],
+    [[ '#766b7f','Darker NTA color · bottom: recipient decreases'],
+      ['#d8d2dc','Lighter NTA color · top: recipient increases']],
+    [...data.changeClasses.map(c=>[c.color,c.label]),
+      ['#ffffff','White: no nonzero net funding in this NTA series'],
+      ['#484a44','12 largest mapped recipient declines, one per coordinate','dot'],
+      ['#999999','Half-mile radius (2,640 US survey feet)','ring']],
     data.venueTypes.slice(0,4).map(t=>[t.color,`${t.type} · ${t.count} directory records`,'ring']),
     [['#484a44','Nodes: the 12 selected NEA recipients with recorded funding declines','dot'],
       ['#6b967e','Links: each example connects to its nearest other selected example','dashed']]
@@ -153,10 +177,10 @@ function renderLegend(index, data) {
   const notes = [
     `${directoryCount.toLocaleString()} mapped DCLA records · October 2026. Equal-size ring = one record; color = recorded discipline. Co-located records remain overlapped; operating status unverified.`,
     'One column = one recipient. Height is linear in annual net NEA obligations (USD), not building height. The same scale is used in Chapters 2–4.',
-    'Height is annual net NEA obligations (USD), using the FY2024 height scale. A missing positive amount does not establish institutional closure.',
+    'Total funding fell 58.1%, unevenly: 112 mapped recipients increased; 351 decreased. Heights use the same scale as FY2024 and show positive net amounts only. Lincoln Center: $145,000 to −$75,000; its bar stops at zero, while the signed −$220,000 change remains in the records. Extremes are ranked by mapped recipient dollar change; tied increases are both highlighted.',
     'Example NTA hues are listed above; the full key is below. Color identifies neighborhood, not funding rank. Height = positive FY2025 recipient net obligations (USD).',
-    'One pair = one NTA total, placed inside its polygon. Both years share a neighborhood height scale, different from recipient columns. Click for signed dollar amounts.',
-    'Counts use projected straight-line distance, not walking time. Directory duplicates, co-located records, and the recipient itself where present remain included.',
+    'One bar = one NTA, using the same neighborhood hue as Chapter 4. All decrease magnitudes are stacked below all increase magnitudes. Height = total absolute recipient change, not net funding: net change = upper gains minus lower losses. $100,000 = 1,200 map meters; this is not building height. Select a slice to inspect its recipient.',
+    'Shading = signed NTA net change, FY2025 minus FY2024 (USD). Points are selected by recipient-level dollar decline, not NTA rank. Buffers use projected straight-line distance; this does not map poverty or visitor journeys.',
     'Same ring colors as Chapter 1: recorded DCLA discipline, October 2026. Equal ring size does not encode funding. The discipline-to-NEA linkage remains pending.',
     'Nearest neighbors use projected distance among these 12 examples only. Links are illustrative proposals, not verified partnerships or transfers; line width encodes no amount.'
   ];
@@ -164,7 +188,7 @@ function renderLegend(index, data) {
   if (index > 0) rows[index].push(['#b9bcb4','2020 NTA boundaries','line']);
   if ([3,4,7].includes(index)) rows[index].push(['#484a44','Faint dots: DCLA directory locations, for context','dot']);
   const titles = ['VENUE TYPES','FY2024 FUNDING','FY2025 FUNDING','RECIPIENTS BY NTA',
-    'TWO YEARS WITHIN EACH NTA','HALF-MILE PROXIMITY','VENUE TYPES','PROPOSED ALLIANCE'];
+    'STACKED LOSSES AND GAINS','NTA CHANGE + SELECTED DECLINES','VENUE TYPES','PROPOSED ALLIANCE'];
   legend.replaceChildren();
   const title = document.createElement('h2');
   title.className = 'legend-title';
@@ -182,7 +206,7 @@ function renderLegend(index, data) {
   });
   const note = document.createElement('p'); note.className = 'legend-note'; note.textContent = notes[index];
   legend.append(note);
-  if (index === 1 || index === 2 || index === 4) {
+  if (index === 1 || index === 2) {
     const scale = document.createElement('p'); scale.className = 'legend-note legend-scale';
     scale.textContent = index === 4 ?
       'Linear height reference: $1,000,000 is 4× the height of $250,000.' :
@@ -203,20 +227,37 @@ function renderLegend(index, data) {
     }
     details.append(summary,list); legend.append(details);
   }
-  const badges = ['Landscape','FY2024','FY2025','NTA groups','NTA funding','Proximity','Venue types','Alliance'];
-  document.querySelector('#map-label').textContent = `${String(index+1).padStart(2,'0')} | 08 ${badges[index]}`;
+  const badges = ['Landscape','FY2024','FY2025','NTA groups','Loss / gain','Selection','Venue types','Alliance'];
+  document.querySelector('#map-label').textContent = `${String(index+1).padStart(2,'0')}|08 ${badges[index]}`;
+  legend.classList.toggle('chart-legend',index===4);
+  legend.classList.toggle('is-collapsed',index===3 && !legendOpen[3]);
+  const content = document.createElement('div'); content.className='legend-content';
+  for(const node of [...legend.children]) if(node!==title) content.append(node);
+  const header=document.createElement('div');header.className='legend-header';
+  header.append(title);legend.append(header,content);
+  if(index===3){
+    const toggle=document.createElement('button');toggle.type='button';toggle.className='legend-toggle';
+    function sync(){const open=legendOpen[3];toggle.textContent=open?'×':'+';toggle.setAttribute('aria-expanded',String(open));toggle.setAttribute('aria-label',open?'Close NTA legend':'Open NTA legend');content.hidden=!open;legend.classList.toggle('is-collapsed',!open);const details=content.querySelector('details');if(details)details.open=true;}
+    toggle.addEventListener('click',()=>{legendOpen[3]=!legendOpen[3];sync();});header.append(toggle);sync();
+  }
+
 }
 
 function activate(index, data) {
   activeChapter = index;
+  document.querySelector('#next-chapter').disabled=index===7;
+  document.querySelector('#next-chapter').setAttribute('aria-label',index===7?'Last chapter':'Go to chapter '+(index+2));
+  for(const id of ['previous-chapter','previous-chapter-right']) document.querySelector('#'+id).disabled=index===0;
+  document.querySelector('#next-chapter-right').disabled=index===7;
+  document.querySelector('#fixed-chapter-number').textContent=String(index+1).padStart(2,'0')+'|08';
   document.querySelector('#chapter-position').textContent = `${String(index+1).padStart(2,'0')} / 08`;
   document.querySelectorAll('.chapter').forEach((section, i) => section.setAttribute('aria-current', i === index ? 'step' : 'false'));
   renderLegend(index, data);
   if (!ready) return;
   popup?.remove();
   camera(index);
-  ['buffers-fill','buffers-lines','proposal-links','proposal-rings',
-    'recipient-ground','funding','nta-funding','negative-markers','anchor-points'].forEach(id => visible(id, false));
+  ['nta-change','buffers-fill','buffers-lines','proposal-links','proposal-rings',
+    'recipient-ground','funding','change-extremes','nta-funding','nta-change-stacks','negative-markers','anchor-points'].forEach(id => visible(id, false));
   map.setPaintProperty('nta-fill', 'fill-opacity', ['case',['get','has_funding_records'], index === 3 ? .1 : index === 4 ? .04 : 0, 0]);
   map.setPaintProperty('nta-lines','line-width',index === 0 ? .3 : .45);
   map.setPaintProperty('nta-lines','line-opacity',index === 0 ? .4 : .7);
@@ -238,8 +279,10 @@ function activate(index, data) {
     map.setPaintProperty('recipient-ground','circle-stroke-width',1);
     map.setPaintProperty('recipient-ground','circle-stroke-opacity',['case',zero,.8,0]);
   }
-  if (index === 4) { visible('nta-funding', true); visible('negative-markers', true); }
-  if (index === 5) ['buffers-fill','buffers-lines','anchor-points'].forEach(id => visible(id,true));
+
+  if (index === 2) visible('change-extremes',true);
+  if (index === 4) visible('nta-change-stacks',true);
+  if (index === 5) ['nta-change','buffers-fill','buffers-lines','anchor-points'].forEach(id => visible(id,true));
   if (index === 7) ['proposal-links','proposal-rings','anchor-points'].forEach(id => visible(id,true));
   animateFunding({ growth: index === 0 ? 0 : 1, year: index >= 2 ? 1 : 0, group: index === 3 ? 1 : 0 });
 }
@@ -249,13 +292,15 @@ function renderChapters(chapters) {
   chapters.forEach((c, i) => {
     const section = document.createElement('article');
     section.className = 'chapter'; section.id = `chapter-${i+1}`;
-    const parts = [['p','chapter-number',c.number.replace(' / ',' | ')],['p','chapter-status',c.status],
+    const parts = [['p','chapter-status',c.status],
       ['h2','',c.title],['p','chapter-lead',c.lead],['p','chapter-metric',c.metric],
       ['p','chapter-caption',c.caption],['p','chapter-method',c.method],
       ['p','chapter-source',c.source],['p','chapter-next',c.next]];
     parts.forEach(([tag, className, text]) => {
       const el = document.createElement(tag); el.className = className; el.textContent = text; section.append(el);
+
     });
+    if(i===4) section.append(document.querySelector('#chapter-chart-template').content.cloneNode(true));
     story.append(section);
   });
 }
@@ -275,12 +320,51 @@ function setupStoryScroll(data) {
 }
 
 const money = number => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(number);
+function setupChangeChart(data) {
+  const chart=data.changeChart;
+  const byId=new Map(chart.rows.map(row=>[row.id,row]));
+  const select=document.querySelector('#chart-view');
+  document.querySelector('#axis-loss').textContent='−'+money(chart.domain_usd);
+  document.querySelector('#axis-gain').textContent='+'+money(chart.domain_usd);
+  const ns='http://www.w3.org/2000/svg';
+  function render(){
+    const container=document.querySelector('#chart-rows');container.replaceChildren();
+    for(const id of chart.views[select.value]){
+      const row=byId.get(id), item=document.createElement('div');item.className='chart-row';
+      const label=document.createElement('span');label.className='chart-label';label.textContent=row.name;label.title=row.id;
+      const svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','-1.05 0 2.1 1');svg.setAttribute('preserveAspectRatio','none');svg.classList.add('chart-bars');
+      const zero=document.createElementNS(ns,'line');zero.setAttribute('x1',0);zero.setAttribute('x2',0);zero.setAttribute('y1',0);zero.setAttribute('y2',1);zero.setAttribute('stroke','#cccccc');zero.setAttribute('vector-effect','non-scaling-stroke');svg.append(zero);
+      for(const segment of row.segments){
+        const rect=document.createElementNS(ns,'rect');
+        rect.setAttribute('x',segment.x);rect.setAttribute('width',segment.width);rect.setAttribute('y',.14);rect.setAttribute('height',.72);
+        rect.setAttribute('fill',segment.side==='loss'?darken(row.color):lighten(row.color,.55));rect.setAttribute('stroke','#fff');rect.setAttribute('stroke-width','.5');rect.setAttribute('vector-effect','non-scaling-stroke');
+        const description=`${segment.name}: ${money(segment.change_cents/100)} change · ${row.name}`;
+        rect.setAttribute('tabindex','0');rect.setAttribute('role','button');rect.setAttribute('aria-label',description);
+        const title=document.createElementNS(ns,'title');title.textContent=description;rect.append(title);
+        const inspect=()=>{
+          const detail=document.querySelector('#chart-detail');detail.replaceChildren();
+          const name=document.createElement('strong');name.textContent=segment.name;
+          const change=document.createElement('p');change.className=segment.change_cents<0?'change-negative':segment.change_cents>0?'change-positive':'';
+          change.textContent='Change: '+money(segment.change_cents/100);
+          const context=document.createElement('p');context.textContent=row.name+' · NTA net change: '+money(row.net_cents/100);
+          detail.append(name,change,context);
+        };
+        rect.addEventListener('click',inspect);rect.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();inspect();}});svg.append(rect);
+      }
+      const net=document.createElement('span');net.className='chart-net';net.textContent=money(row.net_cents/100);
+      item.append(label,svg,net);container.append(item);
+    }
+    container.scrollTop=0;
+  }
+  select.addEventListener('change',render);render();
+}
 function setupClicks() {
-  const layers = ['funding','nta-funding','recipient-ground','negative-markers','anchor-points','directory-points'];
+  const layers = ['change-extremes','nta-change-stacks','funding','nta-funding','recipient-ground','negative-markers','anchor-points','directory-points','nta-change'];
   map.on('click', event => {
     const hits = map.queryRenderedFeatures(event.point, { layers });
     if (!hits.length) return;
     const p = hits[0].properties;
+    if(p.ntaname){p.name=p.ntaname;p.nta=p.nta2020;}
     const card = document.createElement('div');
     const title = document.createElement('h3'); title.textContent = p.name; card.append(title);
     const lines = [];
@@ -291,7 +375,7 @@ function setupClicks() {
       if (p.nearby_records !== undefined) lines.push(`Directory records within ½ mile: ${p.nearby_records}`);
       lines.push('Funding records do not verify operating status.');
     } else lines.push(`Discipline: ${p.discipline || 'Not recorded'}`, 'DCLA directory, Oct 2026. Operating status unverified.');
-    lines.forEach(text => { const paragraph = document.createElement('p'); paragraph.textContent = text; card.append(paragraph); });
+    lines.forEach(text => { const paragraph = document.createElement('p'); paragraph.textContent = text; if(text.startsWith('Change:')) paragraph.className=Number(p.change)<0?'change-negative':Number(p.change)>0?'change-positive':''; card.append(paragraph); });
     popup?.remove();
     popup = new maplibregl.Popup({maxWidth:'320px'}).setLngLat(event.lngLat).setDOMContent(card).addTo(map);
   });
@@ -308,6 +392,13 @@ async function start() {
     return response.json();
   }));
   renderChapters(chapters);
+  setupChangeChart(data);
+  function goToChapter(index){
+    const target=document.querySelector('#chapter-'+(index+1));
+    story.scrollTo({top:target.offsetTop,behavior:reduceMotion?'instant':'smooth'});
+  }
+  for(const id of ['next-chapter','next-chapter-right']) document.querySelector('#'+id).addEventListener('click',()=>goToChapter(Math.min(7,activeChapter+1)));
+  for(const id of ['previous-chapter','previous-chapter-right']) document.querySelector('#'+id).addEventListener('click',()=>goToChapter(Math.max(0,activeChapter-1)));
   setupStoryScroll(data);
   renderLegend(0, data);
   if (!map.isStyleLoaded()) await new Promise(resolve => map.once('load', resolve));

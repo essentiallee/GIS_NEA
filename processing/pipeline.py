@@ -81,6 +81,57 @@ def geometry_lookup(connection, query):
 def wgs84(expression):
     return f"ST_AsGeoJSON(ST_Transform({expression},'EPSG:2263','EPSG:4326',always_xy:=true))"
 
+CHANGE_CLASSES = [
+    ('Loss ≥ $250,000','#cf647e'), ('Loss $50,000–<$250,000','#dfa2b1'),
+    ('Loss >$0–<$50,000','#f3dfe4'), ('No net change','#f1f1ed'),
+    ('Gain >$0–<$50,000','#e0eade'), ('Gain $50,000–<$250,000','#a7c1a7'),
+    ('Gain ≥ $250,000','#73987b')
+]
+
+def change_class(change):
+    if change <= -250000: return 0
+    if change <= -50000: return 1
+    if change < 0: return 2
+    if change == 0: return 3
+    if change < 50000: return 4
+    if change < 250000: return 5
+    return 6
+
+def export_change_chart(connection, neighborhoods):
+    # Stacks contain signed recipient changes, not clipped positive awards.
+    # This preserves negative obligation adjustments in both the chart and net sum.
+    connection.execute('''CREATE TABLE nta_change_stacks AS
+        SELECT nta AS id,
+               CAST(sum(greatest(-change_cents,0)) AS BIGINT) AS loss_cents,
+               CAST(sum(greatest(change_cents,0)) AS BIGINT) AS gain_cents,
+               CAST(sum(change_cents) AS BIGINT) AS net_cents
+        FROM recipients WHERE nta<>'UNMAPPED' GROUP BY nta''')
+    summaries = {r[0]:r[1:] for r in connection.sql(
+        'SELECT id,loss_cents,gain_cents,net_cents FROM nta_change_stacks').fetchall()}
+    maximum = max(max(r[0],r[1]) for r in summaries.values())
+    domain = math.ceil(maximum/10000000)*10000000  # Round to the next $100,000.
+    rows = []
+    for n in neighborhoods:
+        loss,gain,net = summaries[n['id']]
+        check(net==round(n['change']*100),'Stacked changes do not match the NTA net change.')
+        row = dict(n,loss_cents=loss,gain_cents=gain,net_cents=net,segments=[])
+        offsets = {'loss':0,'gain':0}
+        for uid,name,delta in connection.execute('''SELECT id,name,change_cents FROM recipients
+                WHERE nta=? AND change_cents<>0 ORDER BY abs(change_cents) DESC,name,id''',[n['id']]).fetchall():
+            side='loss' if delta<0 else 'gain'
+            width=abs(delta)/domain
+            x=-(offsets[side]+width) if side=='loss' else offsets[side]
+            offsets[side]+=width
+            row['segments'].append({'id':uid,'name':name,'change_cents':delta,
+                                    'side':side,'x':x,'width':width})
+        rows.append(row)
+    rows.sort(key=lambda r:(r['net_cents'],r['name']))
+    losses=[r['id'] for r in rows if r['net_cents']<0][:12]
+    gains=[r['id'] for r in reversed(rows) if r['net_cents']>0][:12]
+    return {'rows':rows,'domain_usd':domain/100,'views':{
+        'overview':losses[:8]+gains[:4],'losses':losses,'gains':gains,
+        'all':[r['id'] for r in rows]}}
+
 def export_web(connection, staging, palette, chapters_path):
     rows = connection.sql('''SELECT id,name,nta,longitude,latitude,cents2024,cents2025
                             FROM recipients WHERE cents2024<>0 OR cents2025<>0 ORDER BY id''').fetchall()
@@ -117,19 +168,26 @@ def export_web(connection, staging, palette, chapters_path):
         stats[f'mapped_positive{year}'] = connection.sql(
             f'SELECT count(*) FROM recipient_points WHERE cents{year}>0').fetchone()[0]
     nta_legend = [{'id':n['id'],'name':n['name'],'color':n['color']} for n in neighborhoods]
+    chart = export_change_chart(connection,neighborhoods)
     venue_types = [{'type':category,'count':count,'color':VENUE_COLORS.get(category,'#b9bcb4')}
                    for category,count in connection.sql('''
                        SELECT COALESCE(discipline,'Not recorded') AS category,count(*) AS records
                        FROM directory GROUP BY category ORDER BY records DESC,category''').fetchall()]
     write_json(staging/'funding.json',dict(recipients=recipients,neighborhoods=neighborhoods,
                                          anchors=anchors,stats=stats,palette=palette,
-                                         ntaLegend=nta_legend,venueTypes=venue_types))
+                                         ntaLegend=nta_legend,venueTypes=venue_types,
+                                         changeChart=chart,changeClasses=[{'label':label,'color':color} for label,color in CHANGE_CLASSES]))
 
     nta_geometries = geometry_lookup(connection, f'SELECT id,{wgs84("ST_SimplifyPreserveTopology(geom,35)")} FROM ntas')
     active_nta_ids = {n['id'] for n in neighborhoods}
+    by_nta = {n['id']:n for n in neighborhoods}
     ntas = features([feature(nta_geometries[uid],{'nta2020':uid,'ntaname':name,'boroname':borough,
                                                 'color':palette.get(uid,'#deded7'),
-                                                'has_funding_records':uid in active_nta_ids})
+                                                'has_funding_records':uid in active_nta_ids,
+                                                'fy2024':by_nta.get(uid,{}).get('fy2024',0),
+                                                'fy2025':by_nta.get(uid,{}).get('fy2025',0),
+                                                'change':by_nta.get(uid,{}).get('change',0),
+                                                'change_color':CHANGE_CLASSES[change_class(by_nta[uid]['change'])][1] if uid in by_nta else '#ffffff'})
                     for uid,name,borough in connection.sql('SELECT id,name,borough FROM ntas ORDER BY id').fetchall()])
     directory = features([feature({'type':'Point','coordinates':[lon,lat]},
                          {'record_id':uid,'name':name,'discipline':discipline,
@@ -144,18 +202,21 @@ def export_web(connection, staging, palette, chapters_path):
     half_width = 80 * FEET_PER_METER
     box = f'ST_MakeEnvelope(ST_X(geom)-{half_width},ST_Y(geom)-{half_width},ST_X(geom)+{half_width},ST_Y(geom)+{half_width})'
     columns = geometry_lookup(connection, f'SELECT id,{wgs84(box)} FROM recipient_points')
+    mapped_changes = [r['change'] for r in recipients if r['coordinates']]
+    largest_gain, largest_drop = max(mapped_changes), min(mapped_changes)
     funding_columns = []
     for r in recipients:
         if r['coordinates'] is None:
             continue
         props = {k:v for k,v in r.items() if k!='coordinates'}
+        props.update(extreme='gain' if r['change']==largest_gain else 'loss' if r['change']==largest_drop else '', direction='gain' if r['change']>0 else 'loss' if r['change']<0 else 'same')
         props.update(h24=max(0,r['fy2024'])*.045,h25=max(0,r['fy2025'])*.045)
         funding_columns.append(feature(columns[r['id']],props))
 
     paired = []
     for year, offset in [(2024,-.6),(2025,.6)]:
         half_width = 130 * FEET_PER_METER
-        shift = offset * 260 * FEET_PER_METER
+        shift = 0
         x,y = 'ST_X(ST_PointOnSurface(geom))','ST_Y(ST_PointOnSurface(geom))'
         box = f'ST_MakeEnvelope({x}+{shift}-{half_width},{y}-{half_width},{x}+{shift}+{half_width},{y}+{half_width})'
         polygons = geometry_lookup(connection, f'SELECT id,{wgs84(box)} FROM nta_funding')
@@ -164,6 +225,33 @@ def export_web(connection, staging, palette, chapters_path):
             props.update(year=year,height=max(0,n[f'fy{year}'])*.008,
                          color=lighter(n['color'],.56) if year==2024 else n['color'])
             paired.append(feature(polygons[n['id']],props))
+    # One bar per NTA: all decreases below all increases.
+    # The cumulative base places each recipient above the previous recipient.
+    change_columns = []
+    for side in ['loss','gain']:
+        half_width = 130 * FEET_PER_METER
+        shift = 0
+        x,y = 'ST_X(ST_PointOnSurface(geom))','ST_Y(ST_PointOnSurface(geom))'
+        box = f'ST_MakeEnvelope({x}+{shift}-{half_width},{y}-{half_width},{x}+{shift}+{half_width},{y}+{half_width})'
+        polygons = geometry_lookup(connection, f'SELECT id,{wgs84(box)} FROM nta_funding')
+        for n in chart['rows']:
+            start_cents = n['loss_cents'] if side=='gain' else 0
+            total_cents = start_cents
+            nta_color = n['color']
+            dark = '#' + ''.join(f'{round(int(nta_color[j:j+2],16)*.7):02x}' for j in [1,3,5])
+            stack_color = dark if side=='loss' else lighter(nta_color,.55)
+            segments = [s for s in n['segments'] if s['side']==side]
+            for i,segment in enumerate(segments):
+                recipient = recipient_by_id[segment['id']]
+                amount_cents = abs(segment['change_cents'])
+                props = {k:v for k,v in recipient.items() if k!='coordinates'}
+                props.update(nta_name=n['name'],nta_net_change=n['change'],side=side,
+                    base=total_cents/100*.012,
+                    height=(total_cents+amount_cents)/100*.012,
+                    color=stack_color,kind='recipient-change')
+                change_columns.append(feature(polygons[n['id']],props))
+                total_cents += amount_cents
+            check(total_cents-start_cents==n[side+'_cents'],'3D stack differs from chart total.')
     buffer_geometries = geometry_lookup(connection, f'SELECT id,{wgs84("geom")} FROM buffers')
     links = []
     for a,b,distance,geometry in connection.sql(f'SELECT from_id,to_id,distance_feet,{wgs84("geom")} FROM proposal_links ORDER BY from_id,to_id').fetchall():
@@ -172,6 +260,8 @@ def export_web(connection, staging, palette, chapters_path):
             'distance_feet':distance,'kind':'proposal'}))
     map_sources = {
         'recipients':features([point(r) for r in recipients if r['coordinates']]),
+        'change-extreme-points':features([feature({'type':'Point','coordinates':r['coordinates']},{**{k:v for k,v in r.items() if k!='coordinates'},'extreme':'gain' if r['change']==largest_gain else 'loss'}) for r in recipients if r['coordinates'] and r['change'] in [largest_gain,largest_drop]]),
+        'nta-change-columns':features(change_columns),
         'funding-columns':features(funding_columns),'nta-columns':features(paired),
         'negative-ntas':features([point(n) for n in neighborhoods if min(n['fy2024'],n['fy2025'])<0]),
         'anchors':features([point(a) for a in anchors]),
@@ -187,8 +277,6 @@ def export_web(connection, staging, palette, chapters_path):
     chapters[2]['metric'] = f'−{decline:.1f}%'
     chapters[2]['caption'] = f"${stats['fy2024']/1e6:.2f}M → ${stats['fy2025']/1e6:.2f}M · approximately ${(stats['fy2024']-stats['fy2025'])/1e6:.2f}M less"
     chapters[4]['metric'] = f'{len(neighborhoods)} mapped NTAs'
-    chapters[5]['method'] = ('Count directory records within a projected half-mile (2,640 US survey feet) of these 12 examples. '
-                             'Co-located and duplicate directory records remain included. Poverty and visitor-origin comparisons are still pending.')
     write_json(staging/'chapters.json',chapters)
     return stats
 
@@ -280,7 +368,7 @@ def run_pipeline(config, project_root=ROOT, output_dir=None):
             write_json(web/'processing-manifest.json',manifest)
             reports = temporary/'reports'
             reports.mkdir()
-            for table in ['accounting','nta_assignment_audit','nearby_counts']:
+            for table in ['accounting','nta_assignment_audit','nearby_counts','nta_change_stacks']:
                 connection.sql(f'SELECT * FROM {table}').df().to_csv(reports/f'{table}.csv',index=False)
             connection.sql('SELECT * FROM annual_funding').write_parquet(str(reports/'annual_funding.parquet'))
             connection.sql('SELECT id,name,geocode_status,nta,cents2024,cents2025 FROM recipients WHERE longitude IS NULL').df().to_csv(reports/'unlocated_recipients.csv',index=False)

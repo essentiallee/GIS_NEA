@@ -85,3 +85,80 @@ h1{font-size:15px;line-height:22px;font-weight:700;margin:0}
  .maplibregl-ctrl-top-right{top:6px;right:0}.maplibregl-ctrl-bottom-right{bottom:20px;right:0}
 }
 @media(prefers-reduced-motion:reduce){#story{scroll-behavior:auto}}
+
+/* The badge advances the right-hand scroll container, never the document. */
+.chapter-switch{display:flex;width:166px;height:30px;border-radius:40px;background:#fff;box-shadow:var(--card-shadow);pointer-events:auto;overflow:hidden}
+.chapter-switch #map-label{width:136px;box-shadow:none;padding:7px 0 7px 20px}
+.map-caption .chapter-switch #next-chapter{width:30px;padding:0;background:transparent;font-size:14px;line-height:30px;flex:none}
+#next-chapter:disabled{opacity:.3;cursor:default}
+.chapter-number{min-height:33px;display:flex;align-items:center}
+.chapter-counter{display:inline-flex;align-items:center;justify-content:space-between;width:88px;height:26px;margin-left:-8px;padding:3px 8px;border-radius:40px;background:#fff;box-shadow:var(--card-shadow);font-size:13px;line-height:18px}
+.next-chapter-inline{border:0;background:transparent;padding:0 2px;line-height:18px;font-size:13px}
+.next-chapter-inline:disabled{opacity:.3;cursor:default}
+.legend-header{display:flex;justify-content:space-between;align-items:center;gap:15px}
+.legend-header .legend-title{margin-bottom:0}
+.legend-content{margin-top:8px}
+.legend-toggle{border:0;background:transparent;font-size:16px;padding:0 3px;line-height:18px}
+#legend.is-collapsed{min-height:0;width:auto;max-width:calc(100% - 82px);padding:13px 24px}
+#legend.chart-legend{min-height:0}
+[hidden]{display:none!important}
+
+/* A diverging stacked chart compares recipient changes within each NTA. */
+#change-chart{position:absolute;top:100px;left:41px;right:30px;bottom:245px;display:flex;flex-direction:column;background:#fff;color:#a1a1a1}
+.chart-header{flex:none;margin-bottom:16px}
+.chart-header h2{font-size:15px;font-weight:400;line-height:24px;margin:0 0 12px;text-transform:uppercase}
+.chart-header label,.chart-header p{font-size:10px;line-height:16px}
+.chart-header p{margin:10px 0 0}
+#chart-view{font:inherit;color:inherit;background:#fff;border:1px solid #e5e3da;padding:5px 8px;max-width:100%}
+.chart-axis,.chart-row{display:grid;grid-template-columns:minmax(125px,180px) minmax(0,1fr) 90px;gap:12px;align-items:center}
+.chart-axis{font-size:9px;line-height:14px;padding-bottom:9px;border-bottom:1px solid #eeede9;flex:none}
+.chart-axis>div{display:flex;justify-content:space-between;gap:4px}
+.chart-axis>span:last-child{text-align:right}
+#chart-rows{overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;min-height:0;flex:1}
+.chart-row{min-height:39px;border-bottom:1px solid #f4f4f1;padding:5px 0;font-size:10px;line-height:14px}
+.chart-label{overflow-wrap:anywhere}
+.chart-bars{display:block;width:100%;height:25px;overflow:visible}
+.chart-bars rect{cursor:pointer}
+.chart-bars rect:focus{outline:none;stroke:#777;stroke-width:1.2}
+.chart-net{text-align:right;font-variant-numeric:tabular-nums;font-size:9px}
+#chart-detail{font-size:9px;line-height:15px;min-height:30px;margin:12px 0 0;flex:none}
+@media(max-width:900px){
+ #change-chart{top:75px;left:14px;right:12px;bottom:155px}
+ .chart-header{margin-bottom:8px}.chart-header h2{font-size:11px;line-height:16px;margin-bottom:5px}
+ .chart-header p,.chart-header label{font-size:8px;line-height:12px}.chart-header p{margin-top:5px}
+ .chart-axis,.chart-row{grid-template-columns:100px minmax(0,1fr) 58px;gap:6px}
+ .chart-axis,.chart-net{font-size:7px}.chart-row{font-size:8px;line-height:12px;min-height:33px}
+ #chart-detail{font-size:8px;line-height:12px;margin:6px 0 0;min-height:24px}
+ #legend.chart-legend{max-height:130px;padding:12px 18px}
+}
+
+
+/* Persistent chapter controls sit outside the scrolling narrative. */
+.fixed-chapter-nav{padding:0 21px 17px;flex:none;background:white;z-index:3}
+.fixed-chapter-nav .chapter-counter{width:116px;margin-left:-8px}
+.fixed-chapter-nav button{border:0;background:transparent;padding:0 3px;font-size:13px}
+.fixed-chapter-nav button:disabled,.chapter-switch button:disabled{opacity:.3;cursor:default}
+.chapter-switch{width:192px}
+.chapter-switch #map-label{width:132px;padding-left:4px}
+.map-caption .chapter-switch button{width:30px;padding:0;background:transparent;font-size:14px;line-height:30px;flex:none}
+.story-footer{bottom:20px;background:white}
+.chapter{padding-bottom:110px}
+/* The Chapter 5 chart travels with its text, leaving the map visible. */
+#change-chart{position:static;inset:auto;width:100%;max-width:700px;height:auto;display:flex;margin-top:24px;background:white}
+#chart-rows{flex:none;max-height:410px;overflow-y:auto}
+.chart-header h2{font-size:12px;line-height:20px}
+.chart-header label,.chart-header p{font-size:9px}
+#chart-view{border-radius:18px}
+#chart-detail{padding:16px 20px;border:1px solid #eeede9;border-radius:24px;box-shadow:0 3px 8px #0001;min-height:54px;overflow-wrap:anywhere}
+#chart-detail p{margin:6px 0 0}
+#chart-detail strong{font-weight:400}
+.maplibregl-popup-content{border-radius:28px;padding:22px 25px;box-shadow:var(--card-shadow);max-height:320px}
+.maplibregl-popup-close-button{top:8px;right:10px;border-radius:50%;width:24px;height:24px}
+.change-negative{color:#c44d72}
+.change-positive{color:#39785f}
+@media(max-width:900px){
+.fixed-chapter-nav{padding:0 12px 12px}
+.fixed-chapter-nav .chapter-counter{font-size:11px;width:108px}
+#change-chart{position:static;inset:auto;margin-top:20px}
+#chart-rows{max-height:340px}
+}
