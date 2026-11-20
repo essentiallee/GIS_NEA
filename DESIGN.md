@@ -23,3 +23,8 @@ This reference link does not automatically synchronize Figma edits with website 
 ## Implemented screen
 
 [Desktop frame 1:2](https://www.figma.com/design/PaYGMeDTtFoZWBah2SaZfV/GIS_Final?node-id=1-2) was implemented on November 17, 2026. The 1728 x 1117 reference defines two panels (843/804 px wide), a 26 px gap, 40 px corners, #d5d5d5 outlines, rgba(233,233,233,0.1) fill, 30 px regular Space Mono title, and a 14 px source footer. At narrower desktop widths, the panel widths adapt proportionally; on small screens they stack.
+
+
+## November 19: white canvas and floating cards
+
+The edited Figma shell and chapter-copy components now guide the website and eight storyboard screens: seamless white canvas, a 185×30 chapter badge, gray Space Mono text, and a rounded floating legend card. Chapter headings are 18px, descriptions 15px, metrics 12px, methods 12px, and source notes 9px. The outer rounded panel borders are removed. Venue legends show all 21 categories in three columns on desktop and two scrollable columns on narrow screens. Existing map interactions and prepared data remain in use.

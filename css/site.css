@@ -1,68 +1,87 @@
-/* The updated Figma layout: 843 / 818 panels, 14px gap, warm paper. */
+/* Figma's white canvas, floating chapter badge, and rounded legend card. */
 @font-face{font-family:'Space Mono';src:url('../fonts/SpaceMono-Regular.ttf') format('truetype');font-weight:400;font-display:swap}
 @font-face{font-family:'Space Mono';src:url('../fonts/SpaceMono-Bold.ttf') format('truetype');font-weight:700;font-display:swap}
-:root{font-family:'Space Mono',monospace;color:#a1a1a1;background:#faf9f3;font-synthesis:none;--paper:#faf9f3;--border:#e5e3da}
+:root{font-family:'Space Mono',monospace;color:#a1a1a1;background:#fff;font-synthesis:none;--paper:#fff;--border:#e5e3da;--card-shadow:0 4px 5px rgba(0,0,0,.25)}
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;overflow:hidden}
 button,a{color:inherit;font:inherit}
 button{cursor:pointer}
 a{text-underline-offset:3px}
 button:focus-visible,a:focus-visible,#story:focus-visible{outline:1px solid #73987b;outline-offset:3px}
-.workspace{height:100dvh;padding:35px 21px 48px 32px;display:grid;grid-template-columns:minmax(0,843fr) minmax(0,818fr);gap:14px}
-.panel{position:relative;min-width:0;min-height:0;border:1px solid var(--border);border-radius:40px;overflow:hidden;background:var(--paper)}
+.workspace{height:100dvh;display:grid;grid-template-columns:minmax(0,889fr) minmax(0,839fr);gap:0}
+.panel{position:relative;min-width:0;min-height:0;overflow:hidden;background:var(--paper)}
 #map{position:absolute;inset:0}
-.map-caption{position:absolute;top:31px;left:30px;right:65px;display:flex;justify-content:space-between;align-items:center;font-size:10px;gap:12px;pointer-events:none}
-.map-caption button{border:0;background:var(--paper);padding:5px;pointer-events:auto;font-size:10px}
+.map-caption{position:absolute;top:35px;left:32px;right:55px;display:flex;justify-content:space-between;align-items:center;gap:12px;pointer-events:none}
+#map-label{display:block;width:185px;height:30px;border-radius:40px;padding:7px 30px;background:#fff;box-shadow:var(--card-shadow);font-size:10px;line-height:15px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.map-caption button{border:0;background:#fff;padding:5px;pointer-events:auto;font-size:9px}
 #map-status{position:absolute;top:50%;left:30px;right:30px;font-size:12px;text-align:center;pointer-events:none}
 #map-status[hidden]{display:none}
-#legend{position:absolute;bottom:76px;left:30px;max-width:calc(100% - 100px);max-height:45%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:8px 10px 8px 0;background:rgba(250,249,243,.94);font-size:11px;line-height:1.6;pointer-events:auto}
-.legend-title{font-size:10px;font-weight:400;margin:0 0 7px;letter-spacing:.015em}
-.legend-row{display:flex;align-items:center;gap:10px;margin:3px 0}
+
+/* The map stays interactive; the legend floats above it. */
+#legend{position:absolute;bottom:39px;left:41px;width:684px;max-width:calc(100% - 82px);min-height:221px;max-height:45%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:20px 40px;background:#fff;border:1px solid #eeede9;border-radius:40px;box-shadow:var(--card-shadow);font-size:9px;line-height:14px;pointer-events:auto}
+.legend-title{font-size:10px;font-weight:400;line-height:14px;margin:0 0 8px;letter-spacing:.015em}
+.legend-row{display:flex;align-items:center;gap:8px;margin:3px 0;min-width:0}
+.legend-row>span:last-child{min-width:0;overflow-wrap:anywhere}
 .swatch{width:12px;height:8px;flex:none;background:var(--color,#b9bcb4)}
-.swatch.ring{width:10px;height:10px;border:1px solid var(--color);border-radius:50%;background:none}
+.swatch.ring{width:7px;height:7px;border:1px solid var(--color);border-radius:50%;background:none}
 .swatch.line{height:0;border-top:1px solid var(--color);background:none}
 .swatch.dashed{height:0;border-top:1px dashed var(--color);background:none}
-.swatch.dot{width:5px;height:5px;border-radius:50%;margin:0 3.5px}
-.swatch.column{width:5px;height:15px;margin:0 3.5px}
+.swatch.dot{width:5px;height:5px;border-radius:50%;margin:0 1px}
+.swatch.column{width:5px;height:15px;margin:0 1px}
+.legend-types-grid{display:grid;grid-auto-flow:column;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(7,auto);column-gap:20px;row-gap:1px}
+.legend-types-grid .legend-row{margin:0;align-items:flex-start}
+.legend-types-grid .swatch{margin-top:3px}
+.legend-note{font-size:9px;margin:8px 0 0;line-height:14px}
 .legend-scale{font-variant-numeric:tabular-nums}
-.nta-key{margin-top:8px;font-size:10px;line-height:1.6}
+.nta-key{margin-top:8px;font-size:9px;line-height:14px}
 .nta-key summary{cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .nta-key-list{max-height:155px;overflow-y:auto;overscroll-behavior:contain;padding:5px 8px 0 0;scrollbar-width:thin}
-.legend-note{max-width:560px;font-size:10px;margin:7px 0 0;line-height:1.5}
-.map-footer{position:absolute;left:30px;right:30px;bottom:20px;display:flex;justify-content:space-between;gap:12px;font-size:9px;pointer-events:none}
+.map-footer{position:absolute;left:41px;right:20px;bottom:12px;display:flex;justify-content:space-between;gap:12px;font-size:8px;pointer-events:none}
 .map-footer a{pointer-events:auto}
+
+/* Chapter sizes and spacing follow the edited Figma Chapter copy component. */
 .narrative-panel{display:flex;flex-direction:column}
-.project-header{padding:23px 37px 20px;flex:none}
+.project-header{padding:43px 21px 20px;flex:none}
 h1{font-size:15px;line-height:22px;font-weight:700;margin:0}
-.project-header p{font-size:11px;line-height:16px;margin:1px 0 0}
-#story{position:relative;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#dbd9cf transparent;flex:1;min-height:0;scroll-behavior:smooth}
-.chapter{padding:35px 37px 100px;min-height:100%;display:flex;flex-direction:column;gap:22px}
-.chapter>*{margin:0;font-weight:400}
-.chapter-number{font-size:22px;line-height:33px}
-.chapter-status{font-size:11px;line-height:17px}
-.chapter h2{font-size:clamp(24px,1.86vw,32px);line-height:1.5}
-.chapter-lead{font-size:clamp(15px,1.16vw,20px);line-height:1.5}
-.chapter-metric{font-size:clamp(26px,2.2vw,38px);line-height:1.5;overflow-wrap:anywhere}
-.chapter-caption{font-size:14px;line-height:1.5}
-.chapter-method{border-top:1px solid var(--border);padding-top:22px;font-size:16px;line-height:1.5}
-.chapter-source{font-size:11px;line-height:1.5;white-space:pre-line}
-.chapter-next{font-size:12px;line-height:1.5;padding-top:4px}
-.story-footer{flex:none;padding:12px 37px 23px;display:flex;justify-content:space-between;gap:12px;font-size:10px}
-.loading-copy{padding:35px 37px;font-size:12px}
-.maplibregl-popup-content{font-family:'Space Mono',monospace;color:#777;background:var(--paper);font-size:11px;line-height:1.7;max-height:260px;overflow:auto;box-shadow:0 1px 10px #0001;border:1px solid var(--border);padding:16px}
+.project-header p{font-size:11px;line-height:17px;margin:1px 0 0}
+#story{position:relative;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#deded8 transparent;flex:1;min-height:0;scroll-behavior:smooth}
+.chapter{padding:0 21px 150px;min-height:100%;display:flex;flex-direction:column;gap:10px}
+.chapter>*{margin:0;font-weight:400;max-width:700px}
+.chapter-number{font-size:13px;line-height:33px}
+.chapter-status,.chapter-next{display:none}
+.chapter h2{font-size:18px;line-height:48px;text-transform:uppercase}
+.chapter-lead{font-size:15px;line-height:30px}
+.chapter-metric{font-size:12px;line-height:57px;overflow-wrap:anywhere}
+.chapter-caption{font-size:9px;line-height:21px}
+.chapter-method{border-top:1px solid var(--border);padding-top:10px;font-size:12px;line-height:24px}
+.chapter-source{font-size:9px;line-height:16.5px;white-space:pre-line}
+.story-footer{position:absolute;left:38px;right:21px;bottom:78px;font-size:10px;line-height:15px;text-transform:uppercase;pointer-events:none}
+#chapter-position{display:none}
+.loading-copy{padding:20px 21px;font-size:12px}
+
+.maplibregl-popup-content{font-family:'Space Mono',monospace;color:#777;background:#fff;font-size:11px;line-height:1.7;max-height:260px;overflow:auto;box-shadow:0 1px 10px #0001;border:1px solid var(--border);padding:16px}
 .maplibregl-popup-content h3{font-size:12px;font-weight:400;margin:0 0 8px}
 .maplibregl-popup-content p{margin:5px 0}
-.maplibregl-ctrl-group{background:var(--paper);box-shadow:none!important;border:1px solid var(--border)}
-.maplibregl-ctrl-bottom-right{bottom:38px;right:10px}
-.maplibregl-ctrl-scale{font-family:'Space Mono',monospace;font-size:9px;color:#999;border-color:#aaa;background:transparent}
-.maplibregl-ctrl-attrib{font-size:9px;background:rgba(250,249,243,.9);color:#a1a1a1}
+.maplibregl-ctrl-group{background:#fff;box-shadow:none!important;border:1px solid var(--border)}
+.maplibregl-ctrl-top-right{top:25px;right:5px}
+.maplibregl-ctrl-bottom-right{bottom:28px;right:10px}
+.maplibregl-ctrl-scale{font-family:'Space Mono',monospace;font-size:9px;color:#999;border-color:#aaa;background:#fff}
+.maplibregl-ctrl-attrib{font-size:9px;background:#fff;color:#a1a1a1}
+
 @media(max-width:900px){
- .workspace{padding:14px;gap:12px;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,52fr) minmax(0,48fr)}
- .panel{border-radius:25px}.map-caption{top:13px;left:18px;right:55px}
- #legend{left:18px;bottom:48px;max-width:calc(100% - 70px);font-size:9px;padding-top:5px}.legend-title,.legend-note{font-size:8px}.legend-row{gap:7px;margin:1px 0}
- .map-footer{left:18px;right:18px;bottom:13px;font-size:8px}.map-footer span{display:none}
- .project-header{padding:14px 22px 10px}h1{font-size:13px}.project-header p{font-size:9px;line-height:13px}
- .chapter{padding:18px 22px 70px;gap:16px}.chapter-number{font-size:17px}.chapter h2{font-size:23px}.chapter-lead{font-size:15px}.chapter-method{font-size:13px}.chapter-caption{font-size:11px}.chapter-status,.chapter-source{font-size:9px}
- .story-footer{padding:8px 22px 13px;font-size:8px}.maplibregl-ctrl-bottom-right{bottom:25px}
+ .workspace{padding:0 12px;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,50fr) minmax(0,50fr)}
+ .narrative-panel{border-top:1px solid #eeede9}
+ .map-caption{top:16px;left:12px;right:45px}
+ #map-label{width:175px;padding:7px 20px;font-size:9px}
+ #legend{left:14px;bottom:35px;width:calc(100% - 58px);max-width:none;min-height:0;max-height:45%;padding:14px 18px;border-radius:25px;font-size:8px;line-height:12px}
+ .legend-title,.legend-note,.nta-key{font-size:8px;line-height:12px}
+ .legend-types-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(11,auto);column-gap:12px}
+ .legend-row{gap:6px;margin:2px 0}
+ .map-footer{left:14px;right:10px;bottom:10px;font-size:7px}.map-footer span{display:none}
+ .project-header{padding:18px 12px 14px}h1{font-size:13px}.project-header p{font-size:9px;line-height:15px}
+ .chapter{padding:0 12px 60px;gap:10px}.chapter h2{font-size:16px;line-height:28px}.chapter-lead{font-size:13px;line-height:24px}
+ .chapter-metric{font-size:12px;line-height:40px}.chapter-method{font-size:11px;line-height:20px}
+ .story-footer{left:12px;right:12px;bottom:10px;font-size:8px;line-height:12px}
+ .maplibregl-ctrl-top-right{top:6px;right:0}.maplibregl-ctrl-bottom-right{bottom:20px;right:0}
 }
 @media(prefers-reduced-motion:reduce){#story{scroll-behavior:auto}}

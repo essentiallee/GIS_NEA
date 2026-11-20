@@ -4,7 +4,7 @@ import * as maplibregl from 'https://unpkg.com/maplibre-gl@6/dist/maplibre-gl.mj
 // Chapter data stays separate so that the writing can change without changing the map.
 const green = '#73987b';
 const rose = '#cf647e';
-const paper = '#faf9f3';
+const paper = '#ffffff';
 const story = document.querySelector('#story');
 const legend = document.querySelector('#legend');
 const status = document.querySelector('#map-status');
@@ -114,7 +114,7 @@ function animateFunding(target) {
 
 function camera(index, duration = 1300) {
   const tilted = index >= 1 && index <= 4;
-  const introInset = index === 0 && map.getContainer().clientWidth >= 600 ? .35 : 0;
+  const introInset = index === 0 && map.getContainer().clientWidth >= 600 ? .5 : 0;
   const center = introInset ? [-73.94,40.687] : [-73.98,40.71];
   map.easeTo({ center, zoom: baseZoom - (tilted ? .3 : introInset),
     pitch: tilted ? 52 : 0, bearing: tilted ? -10 : 0,
@@ -148,8 +148,10 @@ function renderLegend(index, data) {
     [['#484a44','Nodes: the 12 selected NEA recipients with recorded funding declines','dot'],
       ['#6b967e','Links: each example connects to its nearest other selected example','dashed']]
   ];
+  if (index === 0 || index === 6) rows[index] = data.venueTypes.map(t=>[t.color,`${t.type} · ${t.count}`,'ring']);
+  legend.classList.toggle('venue-legend',index === 0 || index === 6);
   const notes = [
-    'Ring color = recorded DCLA discipline; ring size has no quantitative meaning. Co-located records remain overlapped. October 2026 snapshot; operating status unverified.',
+    `${directoryCount.toLocaleString()} mapped DCLA records · October 2026. Equal-size ring = one record; color = recorded discipline. Co-located records remain overlapped; operating status unverified.`,
     'One column = one recipient. Height is linear in annual net NEA obligations (USD), not building height. The same scale is used in Chapters 2–4.',
     'Height is annual net NEA obligations (USD), using the FY2024 height scale. A missing positive amount does not establish institutional closure.',
     'Example NTA hues are listed above; the full key is below. Color identifies neighborhood, not funding rank. Height = positive FY2025 recipient net obligations (USD).',
@@ -161,19 +163,22 @@ function renderLegend(index, data) {
   if (index === 3) rows[index].push(['#999999','Hollow point: no positive FY2025 recipient net amount','ring']);
   if (index > 0) rows[index].push(['#b9bcb4','2020 NTA boundaries','line']);
   if ([3,4,7].includes(index)) rows[index].push(['#484a44','Faint dots: DCLA directory locations, for context','dot']);
-  const titles = ['CULTURAL LANDSCAPE','FY2024 FUNDING','FY2025 FUNDING','RECIPIENTS BY NTA',
-    'TWO YEARS WITHIN EACH NTA','HALF-MILE PROXIMITY','DIRECTORY DISCIPLINES','PROPOSED ALLIANCE'];
+  const titles = ['VENUE TYPES','FY2024 FUNDING','FY2025 FUNDING','RECIPIENTS BY NTA',
+    'TWO YEARS WITHIN EACH NTA','HALF-MILE PROXIMITY','VENUE TYPES','PROPOSED ALLIANCE'];
   legend.replaceChildren();
   const title = document.createElement('h2');
   title.className = 'legend-title';
   title.textContent = `${String(index+1).padStart(2,'0')} / ${titles[index]}`;
   legend.append(title);
+  const rowsContainer = document.createElement('div');
+  rowsContainer.className = (index === 0 || index === 6) ? 'legend-types-grid' : 'legend-rows';
+  legend.append(rowsContainer);
   rows[index].forEach(([color, label, shape]) => {
     const row = document.createElement('div'); row.className = 'legend-row';
     const swatch = document.createElement('span'); swatch.className = `swatch ${shape || ''}`;
     swatch.style.setProperty('--color', color);
     const text = document.createElement('span'); text.textContent = label;
-    row.append(swatch, text); legend.append(row);
+    row.append(swatch, text); rowsContainer.append(row);
   });
   const note = document.createElement('p'); note.className = 'legend-note'; note.textContent = notes[index];
   legend.append(note);
@@ -198,21 +203,8 @@ function renderLegend(index, data) {
     }
     details.append(summary,list); legend.append(details);
   }
-  if (index === 0 || index === 6) {
-    const details = document.createElement('details'); details.className = 'nta-key venue-key';
-    const summary = document.createElement('summary');
-    summary.textContent = `All ${data.venueTypes.length} venue types and record counts`;
-    const list = document.createElement('div'); list.className = 'nta-key-list';
-    for (const type of data.venueTypes) {
-      const row = document.createElement('div'); row.className = 'legend-row';
-      const swatch = document.createElement('span'); swatch.className = 'swatch ring';
-      swatch.style.setProperty('--color', type.color);
-      const text = document.createElement('span'); text.textContent = `${type.type} · ${type.count}`;
-      row.append(swatch,text); list.append(row);
-    }
-    details.append(summary,list); legend.append(details);
-  }
-  document.querySelector('#map-label').textContent = title.textContent;
+  const badges = ['Landscape','FY2024','FY2025','NTA groups','NTA funding','Proximity','Venue types','Alliance'];
+  document.querySelector('#map-label').textContent = `${String(index+1).padStart(2,'0')} | 08 ${badges[index]}`;
 }
 
 function activate(index, data) {
@@ -257,7 +249,7 @@ function renderChapters(chapters) {
   chapters.forEach((c, i) => {
     const section = document.createElement('article');
     section.className = 'chapter'; section.id = `chapter-${i+1}`;
-    const parts = [['p','chapter-number',c.number],['p','chapter-status',c.status],
+    const parts = [['p','chapter-number',c.number.replace(' / ',' | ')],['p','chapter-status',c.status],
       ['h2','',c.title],['p','chapter-lead',c.lead],['p','chapter-metric',c.metric],
       ['p','chapter-caption',c.caption],['p','chapter-method',c.method],
       ['p','chapter-source',c.source],['p','chapter-next',c.next]];
